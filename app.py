@@ -1070,7 +1070,7 @@ def check_axis(data: dict, sc: dict, axis: str):
 # Step 3: numerical problems (three per situation, each with different givens)
 # Answers are computed below from the givens, so they always match the physics.
 # ---------------------------------------------------------------------------
-G = 9.8
+G = 10
 KG, NT, MS2, DEG = r"\,\text{kg}", r"\,\text{N}", r"\,\text{m/s}^2", r"^\circ"
 
 
@@ -1097,18 +1097,18 @@ def build_problems() -> dict:
            [U("Normal force", "N", "N", N)],
            r"With $\Sigma F_y = 0$, the normal force balances the weight, and $W = mg$.",
            [r"N - W = 0 \;\Rightarrow\; N = mg",
-            rf"N = ({v(m)}{KG})(9.8{MS2}) = {n(N)}{NT}"])
-    N2 = 14.7; m2 = N2 / G
+            rf"N = ({v(m)}{KG})(10{MS2}) = {n(N)}{NT}"])
+    N2 = 15; m2 = N2 / G
     a2 = P(rf"The table pushes up on a book with a normal force of ${v(N2)}{NT}$. Find the book's mass.",
            [U("Mass", "m", "kg", m2)],
            r"Start from $N - W = 0$, so $N = mg$. Solve for $m$.",
            [r"N = mg \;\Rightarrow\; m = \dfrac{N}{g}",
-            rf"m = \dfrac{{{v(N2)}{NT}}}{{9.8{MS2}}} = {n(m2)}{KG}"])
-    W3 = 19.6
+            rf"m = \dfrac{{{v(N2)}{NT}}}{{10{MS2}}} = {n(m2)}{KG}"])
+    W3 = 20
     a3 = P(rf"A book's weight is ${v(W3)}{NT}$. Find its mass and the normal force from the table.",
            [U("Mass", "m", "kg", W3 / G), U("Normal force", "N", "N", W3)],
            r"$W = mg$ gives the mass. Your $y$-equation gives $N$.",
-           [rf"m = \dfrac{{W}}{{g}} = \dfrac{{{v(W3)}{NT}}}{{9.8{MS2}}} = {n(W3 / G)}{KG}",
+           [rf"m = \dfrac{{W}}{{g}} = \dfrac{{{v(W3)}{NT}}}{{10{MS2}}} = {n(W3 / G)}{KG}",
             rf"N - W = 0 \;\Rightarrow\; N = W = {n(W3)}{NT}"])
     p["book"] = [a1, a2, a3]
 
@@ -1117,21 +1117,21 @@ def build_problems() -> dict:
     b1 = P(rf"A ${v(m)}{KG}$ lamp hangs at rest from a single cord. Find the tension in the cord.",
            [U("Tension", "T", "N", T)],
            r"With $\Sigma F_y = 0$, the tension balances the weight.",
-           [r"T - W = 0 \;\Rightarrow\; T = mg", rf"T = ({v(m)}{KG})(9.8{MS2}) = {n(T)}{NT}"])
+           [r"T - W = 0 \;\Rightarrow\; T = mg", rf"T = ({v(m)}{KG})(10{MS2}) = {n(T)}{NT}"])
     Tmax = 50
     b2 = P(rf"A cord can hold at most ${v(Tmax)}{NT}$ before it breaks. What is the largest mass of lamp it can hold "
            r"at rest?",
            [U("Largest mass", "m", "kg", Tmax / G)],
            r"Set the tension equal to its largest value in $T - W = 0$, then solve for $m$.",
            [r"T - mg = 0 \;\Rightarrow\; m = \dfrac{T}{g}",
-            rf"m = \dfrac{{{v(Tmax)}{NT}}}{{9.8{MS2}}} = {n(Tmax / G)}{KG}"])
-    T3 = 19.6
+            rf"m = \dfrac{{{v(Tmax)}{NT}}}{{10{MS2}}} = {n(Tmax / G)}{KG}"])
+    T3 = 20
     b3 = P(rf"The tension in a lamp's cord is ${v(T3)}{NT}$ while the lamp hangs at rest. Find the lamp's weight "
            r"and its mass.",
            [U("Weight", "W", "N", T3), U("Mass", "m", "kg", T3 / G)],
            r"$T - W = 0$ gives the weight; then use $W = mg$.",
            [rf"T - W = 0 \;\Rightarrow\; W = T = {n(T3)}{NT}",
-            rf"m = \dfrac{{W}}{{g}} = \dfrac{{{v(T3)}{NT}}}{{9.8{MS2}}} = {n(T3 / G)}{KG}"])
+            rf"m = \dfrac{{W}}{{g}} = \dfrac{{{v(T3)}{NT}}}{{10{MS2}}} = {n(T3 / G)}{KG}"])
     p["lamp"] = [b1, b2, b3]
 
     # ---- Skydiver at terminal velocity ----
@@ -1139,13 +1139,13 @@ def build_problems() -> dict:
     c1 = P(rf"A ${v(m)}{KG}$ skydiver falls at terminal velocity. Find the force of air resistance.",
            [U("Air resistance", "F_{air}", "N", F)],
            r"At terminal velocity $a = 0$, so air resistance balances the weight.",
-           [r"F_{air} - W = 0 \;\Rightarrow\; F_{air} = mg", rf"F_{{air}} = ({v(m)}{KG})(9.8{MS2}) = {n(F)}{NT}"])
-    F2 = 833
+           [r"F_{air} - W = 0 \;\Rightarrow\; F_{air} = mg", rf"F_{{air}} = ({v(m)}{KG})(10{MS2}) = {n(F)}{NT}"])
+    F2 = 850
     c2 = P(rf"At terminal velocity, the air pushes up on a skydiver with ${v(F2)}{NT}$. Find the skydiver's mass.",
            [U("Mass", "m", "kg", F2 / G)],
            r"Use $F_{air} - W = 0$ with $W = mg$.",
            [r"F_{air} = mg \;\Rightarrow\; m = \dfrac{F_{air}}{g}",
-            rf"m = \dfrac{{{v(F2)}{NT}}}{{9.8{MS2}}} = {n(F2 / G)}{KG}"])
+            rf"m = \dfrac{{{v(F2)}{NT}}}{{10{MS2}}} = {n(F2 / G)}{KG}"])
     mp, mg_ = 78, 14
     F3 = (mp + mg_) * G
     c3 = P(rf"A ${v(mp)}{KG}$ skydiver wears ${v(mg_)}{KG}$ of gear and falls at terminal velocity. Find the force of "
@@ -1153,7 +1153,7 @@ def build_problems() -> dict:
            [U("Air resistance", "F_{air}", "N", F3)],
            r"Treat the skydiver and gear as one object with the total mass.",
            [rf"m = {v(mp)}{KG} + {v(mg_)}{KG} = {v(mp + mg_)}{KG}",
-            rf"F_{{air}} = mg = ({v(mp + mg_)}{KG})(9.8{MS2}) = {n(F3)}{NT}"])
+            rf"F_{{air}} = mg = ({v(mp + mg_)}{KG})(10{MS2}) = {n(F3)}{NT}"])
     p["skydiver"] = [c1, c2, c3]
 
     # ---- Elevator accelerating upward ----
@@ -1163,21 +1163,21 @@ def build_problems() -> dict:
            [U("Normal force", "N", "N", N)],
            r"Use $N - W = ma$ and solve for $N$.",
            [r"N - mg = ma \;\Rightarrow\; N = m(g + a)",
-            rf"N = ({v(m)}{KG})(9.8{MS2} + {v(a)}{MS2}) = {n(N)}{NT}"])
-    m, N = 55, 616; a = N / m - G
+            rf"N = ({v(m)}{KG})(10{MS2} + {v(a)}{MS2}) = {n(N)}{NT}"])
+    m, N = 55, 627; a = N / m - G
     d2 = P(rf"A ${v(m)}{KG}$ student stands on a scale in an elevator accelerating upward. The scale reads "
            rf"${v(N)}{NT}$. Find the elevator's acceleration.",
            [U("Acceleration", "a", "m/s²", a)],
            r"Solve $N - mg = ma$ for $a$.",
            [r"N - mg = ma \;\Rightarrow\; a = \dfrac{N - mg}{m}",
-            rf"a = \dfrac{{{v(N)}{NT} - ({v(m)}{KG})(9.8{MS2})}}{{{v(m)}{KG}}} = {n(a)}{MS2}"])
-    N, a = 810, 2.0; m = N / (G + a)
+            rf"a = \dfrac{{{v(N)}{NT} - ({v(m)}{KG})(10{MS2})}}{{{v(m)}{KG}}} = {n(a)}{MS2}"])
+    N, a = 840, 2.0; m = N / (G + a)
     d3 = P(rf"While an elevator accelerates upward at ${v(a)}{MS2}$, the floor pushes up on a passenger with "
            rf"${v(N)}{NT}$. Find the passenger's mass.",
            [U("Mass", "m", "kg", m)],
            r"Factor $m$ out of $N - mg = ma$.",
            [r"N = m(g + a) \;\Rightarrow\; m = \dfrac{N}{g + a}",
-            rf"m = \dfrac{{{v(N)}{NT}}}{{9.8{MS2} + {v(a)}{MS2}}} = {n(m)}{KG}"])
+            rf"m = \dfrac{{{v(N)}{NT}}}{{10{MS2} + {v(a)}{MS2}}} = {n(m)}{KG}"])
     p["elevator"] = [d1, d2, d3]
 
     # ---- Elevator accelerating downward ----
@@ -1187,16 +1187,16 @@ def build_problems() -> dict:
            [U("Normal force", "N", "N", N)],
            r"Use $N - W = -ma$, where $a$ is the size of the acceleration.",
            [r"N - mg = -ma \;\Rightarrow\; N = m(g - a)",
-            rf"N = ({v(m)}{KG})(9.8{MS2} - {v(a)}{MS2}) = {n(N)}{NT}"])
-    m, N = 70, 546; a = G - N / m
+            rf"N = ({v(m)}{KG})(10{MS2} - {v(a)}{MS2}) = {n(N)}{NT}"])
+    m, N = 70, 560; a = G - N / m
     e2 = P(rf"A ${v(m)}{KG}$ passenger stands on a scale in an elevator accelerating downward. The scale reads "
            rf"${v(N)}{NT}$. Find the size of the elevator's acceleration.",
            [U("Acceleration", "a", "m/s²", a)],
            r"Solve $N - mg = -ma$ for $a$.",
            [r"N - mg = -ma \;\Rightarrow\; a = \dfrac{mg - N}{m}",
-            rf"a = \dfrac{{({v(m)}{KG})(9.8{MS2}) - {v(N)}{NT}}}{{{v(m)}{KG}}} = {n(a)}{MS2}"])
+            rf"a = \dfrac{{({v(m)}{KG})(10{MS2}) - {v(N)}{NT}}}{{{v(m)}{KG}}} = {n(a)}{MS2}"])
     m = 50
-    e3 = P(rf"An elevator's cable snaps and the car falls freely, accelerating downward at $9.8{MS2}$. Find the normal "
+    e3 = P(rf"An elevator's cable snaps and the car falls freely, accelerating downward at $10{MS2}$. Find the normal "
            rf"force on a ${v(m)}{KG}$ passenger. (Safety brakes stop it right away, of course.)",
            [U("Normal force", "N", "N", 0.0)],
            r"Use $N - mg = -ma$ with $a = g$.",
@@ -1210,7 +1210,7 @@ def build_problems() -> dict:
            [U("Tension", "T", "N", T)],
            r"Use $T - W_1 = -m_1 a$ and solve for $T$.",
            [r"T - m_1 g = -m_1 a \;\Rightarrow\; T = m_1(g - a)",
-            rf"T = ({v(m1)}{KG})(9.8{MS2} - {v(a)}{MS2}) = {n(T)}{NT}"])
+            rf"T = ({v(m1)}{KG})(10{MS2} - {v(a)}{MS2}) = {n(T)}{NT}"])
     m1, m2 = 5.0, 3.0; a = (m1 - m2) * G / (m1 + m2); T = m1 * (G - a)
     f2 = P(rf"The masses are $m_1 = {v(m1)}{KG}$ and $m_2 = {v(m2)}{KG}$. Find the acceleration and the tension. "
            r"(You'll need the lighter mass's equation too: $T - W_2 = m_2 a$.)",
@@ -1218,15 +1218,15 @@ def build_problems() -> dict:
            r"Subtract the two equations to eliminate $T$, solve for $a$, then substitute back.",
            [r"T - m_1 g = -m_1 a \quad\text{and}\quad T - m_2 g = m_2 a",
             r"\text{Subtract: } (m_1 - m_2)g = (m_1 + m_2)a \;\Rightarrow\; a = \dfrac{(m_1 - m_2)g}{m_1 + m_2}",
-            rf"a = \dfrac{{({v(m1)} - {v(m2)})(9.8)}}{{{v(m1)} + {v(m2)}}} = {n(a)}{MS2}",
-            rf"T = m_1(g - a) = ({v(m1)})(9.8 - {n(a)}) = {n(T)}{NT}"])
+            rf"a = \dfrac{{({v(m1)} - {v(m2)})(10)}}{{{v(m1)} + {v(m2)}}} = {n(a)}{MS2}",
+            rf"T = m_1(g - a) = ({v(m1)})(10 - {n(a)}) = {n(T)}{NT}"])
     m1, T = 4.0, 30; a = G - T / m1
     f3 = P(rf"The tension in the rope is ${v(T)}{NT}$ and the heavier mass is $m_1 = {v(m1)}{KG}$. Find the size of "
            r"its acceleration.",
            [U("Acceleration", "a", "m/s²", a)],
            r"Solve $T - m_1 g = -m_1 a$ for $a$.",
            [r"a = \dfrac{m_1 g - T}{m_1}",
-            rf"a = \dfrac{{({v(m1)})(9.8) - {v(T)}}}{{{v(m1)}}} = {n(a)}{MS2}"])
+            rf"a = \dfrac{{({v(m1)})(10) - {v(T)}}}{{{v(m1)}}} = {n(a)}{MS2}"])
     p["atwood_heavy"] = [f1, f2, f3]
 
     # ---- Pulley: lighter hanging mass ----
@@ -1235,21 +1235,21 @@ def build_problems() -> dict:
            r"Find the tension in the rope.",
            [U("Tension", "T", "N", T)],
            r"Use $T - W_2 = m_2 a$ and solve for $T$.",
-           [r"T = m_2(g + a)", rf"T = ({v(m2)}{KG})(9.8{MS2} + {v(a)}{MS2}) = {n(T)}{NT}"])
+           [r"T = m_2(g + a)", rf"T = ({v(m2)}{KG})(10{MS2} + {v(a)}{MS2}) = {n(T)}{NT}"])
     m2, T = 2.0, 25; a = T / m2 - G
     g2 = P(rf"The rope pulls up on the lighter mass $m_2 = {v(m2)}{KG}$ with a tension of ${v(T)}{NT}$. Find its "
            r"acceleration.",
            [U("Acceleration", "a", "m/s²", a)],
            r"Solve $T - m_2 g = m_2 a$ for $a$.",
-           [r"a = \dfrac{T - m_2 g}{m_2}", rf"a = \dfrac{{{v(T)} - ({v(m2)})(9.8)}}{{{v(m2)}}} = {n(a)}{MS2}"])
+           [r"a = \dfrac{T - m_2 g}{m_2}", rf"a = \dfrac{{{v(T)} - ({v(m2)})(10)}}{{{v(m2)}}} = {n(a)}{MS2}"])
     m1, m2 = 6.0, 4.0; a = (m1 - m2) * G / (m1 + m2); T = m2 * (G + a)
     g3 = P(rf"The masses are $m_1 = {v(m1)}{KG}$ and $m_2 = {v(m2)}{KG}$. Find the acceleration and the tension. "
            r"(You'll need the heavier mass's equation too: $T - W_1 = -m_1 a$.)",
            [U("Acceleration", "a", "m/s²", a), U("Tension", "T", "N", T)],
            r"Subtract the two equations to eliminate $T$.",
            [r"a = \dfrac{(m_1 - m_2)g}{m_1 + m_2}",
-            rf"a = \dfrac{{({v(m1)} - {v(m2)})(9.8)}}{{{v(m1)} + {v(m2)}}} = {n(a)}{MS2}",
-            rf"T = m_2(g + a) = ({v(m2)})(9.8 + {n(a)}) = {n(T)}{NT}"])
+            rf"a = \dfrac{{({v(m1)} - {v(m2)})(10)}}{{{v(m1)} + {v(m2)}}} = {n(a)}{MS2}",
+            rf"T = m_2(g + a) = ({v(m2)})(10 + {n(a)}) = {n(T)}{NT}"])
     p["atwood_light"] = [g1, g2, g3]
 
     # ---- Pulley: box on a frictionless table ----
@@ -1259,7 +1259,7 @@ def build_problems() -> dict:
            [U("Tension", "T", "N", m1 * a), U("Normal force", "N", "N", m1 * G)],
            r"The $x$-equation gives $T$; the $y$-equation gives $N$.",
            [rf"T = m_1 a = ({v(m1)}{KG})({v(a)}{MS2}) = {n(m1 * a)}{NT}",
-            rf"N = W_1 = m_1 g = ({v(m1)})(9.8) = {n(m1 * G)}{NT}"])
+            rf"N = W_1 = m_1 g = ({v(m1)})(10) = {n(m1 * G)}{NT}"])
     T, a = 12, 3.0
     h2 = P(rf"The string pulls on the box with ${v(T)}{NT}$, and the box accelerates at ${v(a)}{MS2}$. Find the "
            r"box's mass.",
@@ -1272,7 +1272,7 @@ def build_problems() -> dict:
            [U("Acceleration", "a", "m/s²", a), U("Tension", "T", "N", T)],
            r"Substitute $T = m_1 a$ into the hanging mass's equation.",
            [r"m_1 a - m_2 g = -m_2 a \;\Rightarrow\; a = \dfrac{m_2 g}{m_1 + m_2}",
-            rf"a = \dfrac{{({v(m2)})(9.8)}}{{{v(m1)} + {v(m2)}}} = {n(a)}{MS2}",
+            rf"a = \dfrac{{({v(m2)})(10)}}{{{v(m1)} + {v(m2)}}} = {n(a)}{MS2}",
             rf"T = m_1 a = ({v(m1)})({n(a)}) = {n(T)}{NT}"])
     p["table_box"] = [h1, h2, h3]
 
@@ -1281,20 +1281,20 @@ def build_problems() -> dict:
     i1 = P(rf"The hanging mass $m_2 = {v(m2)}{KG}$ accelerates downward at ${v(a)}{MS2}$. Find the tension.",
            [U("Tension", "T", "N", T)],
            r"Use $T - W_2 = -m_2 a$ and solve for $T$.",
-           [r"T = m_2(g - a)", rf"T = ({v(m2)}{KG})(9.8{MS2} - {v(a)}{MS2}) = {n(T)}{NT}"])
+           [r"T = m_2(g - a)", rf"T = ({v(m2)}{KG})(10{MS2} - {v(a)}{MS2}) = {n(T)}{NT}"])
     m1, m2 = 2.0, 2.0; a = m2 * G / (m1 + m2); T = m1 * a
     i2 = P(rf"The box on the frictionless table and the hanging mass are both ${v(m1)}{KG}$. Find the acceleration "
            r"and the tension. (You'll need the box's equation too: $T = m_1 a$.)",
            [U("Acceleration", "a", "m/s²", a), U("Tension", "T", "N", T)],
            r"Substitute $T = m_1 a$ into $T - m_2 g = -m_2 a$.",
-           [r"a = \dfrac{m_2 g}{m_1 + m_2}", rf"a = \dfrac{{({v(m2)})(9.8)}}{{{v(m1)} + {v(m2)}}} = {n(a)}{MS2}",
+           [r"a = \dfrac{m_2 g}{m_1 + m_2}", rf"a = \dfrac{{({v(m2)})(10)}}{{{v(m1)} + {v(m2)}}} = {n(a)}{MS2}",
             rf"T = m_1 a = ({v(m1)})({n(a)}) = {n(T)}{NT}"])
     m2, T = 1.0, 6.0; a = G - T / m2
     i3 = P(rf"The tension in the string is ${v(T)}{NT}$ and the hanging mass is $m_2 = {v(m2)}{KG}$. Find the size "
            r"of its acceleration.",
            [U("Acceleration", "a", "m/s²", a)],
            r"Solve $T - m_2 g = -m_2 a$ for $a$.",
-           [r"a = \dfrac{m_2 g - T}{m_2}", rf"a = \dfrac{{({v(m2)})(9.8) - {v(T)}}}{{{v(m2)}}} = {n(a)}{MS2}"])
+           [r"a = \dfrac{m_2 g - T}{m_2}", rf"a = \dfrac{{({v(m2)})(10) - {v(T)}}}{{{v(m2)}}} = {n(a)}{MS2}"])
     p["table_hanging"] = [i1, i2, i3]
 
     # ---- Pulley: box on a rough table ----
@@ -1303,7 +1303,7 @@ def build_problems() -> dict:
            rf"${v(a)}{MS2}$. Find the friction force and the tension.",
            [U("Kinetic friction", "f_k", "N", fk), U("Tension", "T", "N", T)],
            r"The $y$-equation gives $N = m_1 g$, so $f_k = \mu_k N$. Then use $T - f_k = m_1 a$.",
-           [rf"N = m_1 g = ({v(m1)})(9.8) = {n(m1 * G)}{NT}",
+           [rf"N = m_1 g = ({v(m1)})(10) = {n(m1 * G)}{NT}",
             rf"f_k = \mu_k N = ({v(mu)})({n(m1 * G)}) = {n(fk)}{NT}",
             rf"T = f_k + m_1 a = {n(fk)} + ({v(m1)})({v(a)}) = {n(T)}{NT}"])
     m1, T, mu = 4.0, 20, 0.25; fk = mu * m1 * G; a = (T - fk) / m1
@@ -1311,7 +1311,7 @@ def build_problems() -> dict:
            r"force and the box's acceleration.",
            [U("Kinetic friction", "f_k", "N", fk), U("Acceleration", "a", "m/s²", a)],
            r"Find $N$, then $f_k = \mu_k N$, then solve $T - f_k = m_1 a$ for $a$.",
-           [rf"f_k = \mu_k m_1 g = ({v(mu)})({v(m1)})(9.8) = {n(fk)}{NT}",
+           [rf"f_k = \mu_k m_1 g = ({v(mu)})({v(m1)})(10) = {n(fk)}{NT}",
             rf"a = \dfrac{{T - f_k}}{{m_1}} = \dfrac{{{v(T)} - {n(fk)}}}{{{v(m1)}}} = {n(a)}{MS2}"])
     m1, m2, mu = 4.0, 2.0, 0.30; a = (m2 - mu * m1) * G / (m1 + m2); T = m2 * (G - a)
     j3 = P(rf"The box has mass $m_1 = {v(m1)}{KG}$, the hanging mass is $m_2 = {v(m2)}{KG}$, and $\mu_k = {v(mu)}$. "
@@ -1321,8 +1321,8 @@ def build_problems() -> dict:
            r"Add $T - \mu_k m_1 g = m_1 a$ and $m_2 g - T = m_2 a$ to eliminate $T$.",
            [r"T - \mu_k m_1 g = m_1 a \quad\text{and}\quad m_2 g - T = m_2 a",
             r"\text{Add: } m_2 g - \mu_k m_1 g = (m_1 + m_2)a \;\Rightarrow\; a = \dfrac{(m_2 - \mu_k m_1)g}{m_1 + m_2}",
-            rf"a = \dfrac{{({v(m2)} - ({v(mu)})({v(m1)}))(9.8)}}{{{v(m1)} + {v(m2)}}} = {n(a)}{MS2}",
-            rf"T = m_2(g - a) = ({v(m2)})(9.8 - {n(a)}) = {n(T)}{NT}"])
+            rf"a = \dfrac{{({v(m2)} - ({v(mu)})({v(m1)}))(10)}}{{{v(m1)} + {v(m2)}}} = {n(a)}{MS2}",
+            rf"T = m_2(g - a) = ({v(m2)})(10 - {n(a)}) = {n(T)}{NT}"])
     p["table_box_friction"] = [j1, j2, j3]
 
     # ---- Pushing a box (speeding up) ----
@@ -1337,7 +1337,7 @@ def build_problems() -> dict:
            r"the friction force, and the push.",
            [U("Normal force", "N", "N", N), U("Kinetic friction", "f_k", "N", fk), U("Push", "F_A", "N", FA)],
            r"$y$-equation for $N$, then $f_k = \mu_k N$, then the $x$-equation for $F_A$.",
-           [rf"N = mg = ({v(m)})(9.8) = {n(N)}{NT}", rf"f_k = \mu_k N = ({v(mu)})({n(N)}) = {n(fk)}{NT}",
+           [rf"N = mg = ({v(m)})(10) = {n(N)}{NT}", rf"f_k = \mu_k N = ({v(mu)})({n(N)}) = {n(fk)}{NT}",
             rf"F_A = f_k + ma = {n(fk)} + ({v(m)})({v(a)}) = {n(FA)}{NT}"])
     m, FA, a = 8, 40, 2.5; fk = FA - m * a; mu = fk / (m * G)
     k3 = P(rf"A ${v(m)}{KG}$ box pushed with ${v(FA)}{NT}$ accelerates at ${v(a)}{MS2}$. Find the friction force and "
@@ -1345,7 +1345,7 @@ def build_problems() -> dict:
            [U("Kinetic friction", "f_k", "N", fk), U("Coefficient of kinetic friction", r"\mu_k", "", mu)],
            r"Solve $F_A - f_k = ma$ for $f_k$, then use $f_k = \mu_k N$ with $N = mg$.",
            [rf"f_k = F_A - ma = {v(FA)} - ({v(m)})({v(a)}) = {n(fk)}{NT}",
-            rf"\mu_k = \dfrac{{f_k}}{{mg}} = \dfrac{{{n(fk)}}}{{({v(m)})(9.8)}} = {n(mu)}"])
+            rf"\mu_k = \dfrac{{f_k}}{{mg}} = \dfrac{{{n(fk)}}}{{({v(m)})(10)}} = {n(mu)}"])
     p["push"] = [k1, k2, k3]
 
     # ---- Pushing a box that slows down ----
@@ -1360,7 +1360,7 @@ def build_problems() -> dict:
            r"Find the friction force and the push.",
            [U("Kinetic friction", "f_k", "N", fk), U("Push", "F_A", "N", FA)],
            r"$f_k = \mu_k mg$, then solve $F_A - f_k = -ma$ for $F_A$.",
-           [rf"f_k = \mu_k mg = ({v(mu)})({v(m)})(9.8) = {n(fk)}{NT}",
+           [rf"f_k = \mu_k mg = ({v(mu)})({v(m)})(10) = {n(fk)}{NT}",
             rf"F_A = f_k - ma = {n(fk)} - ({v(m)})({v(a)}) = {n(FA)}{NT}"])
     m, FA, a = 12, 30, 0.5; fk = FA + m * a; mu = fk / (m * G)
     l3 = P(rf"A ${v(m)}{KG}$ box is pushed with ${v(FA)}{NT}$ and slows down at ${v(a)}{MS2}$. Find the friction "
@@ -1368,7 +1368,7 @@ def build_problems() -> dict:
            [U("Kinetic friction", "f_k", "N", fk), U("Coefficient of kinetic friction", r"\mu_k", "", mu)],
            r"Solve $F_A - f_k = -ma$ for $f_k$, then $\mu_k = f_k / N$.",
            [rf"f_k = F_A + ma = {v(FA)} + ({v(m)})({v(a)}) = {n(fk)}{NT}",
-            rf"\mu_k = \dfrac{{f_k}}{{mg}} = \dfrac{{{n(fk)}}}{{({v(m)})(9.8)}} = {n(mu)}"])
+            rf"\mu_k = \dfrac{{f_k}}{{mg}} = \dfrac{{{n(fk)}}}{{({v(m)})(10)}} = {n(mu)}"])
     p["push_slowing"] = [l1, l2, l3]
 
     # ---- Box sliding to a stop ----
@@ -1377,22 +1377,22 @@ def build_problems() -> dict:
            r"size of the box's acceleration.",
            [U("Kinetic friction", "f_k", "N", fk), U("Acceleration", "a", "m/s²", a)],
            r"$f_k = \mu_k N$ with $N = mg$; then $-f_k = -ma$.",
-           [rf"f_k = \mu_k mg = ({v(mu)})({v(m)})(9.8) = {n(fk)}{NT}",
+           [rf"f_k = \mu_k mg = ({v(mu)})({v(m)})(10) = {n(fk)}{NT}",
             rf"a = \dfrac{{f_k}}{{m}} = \dfrac{{{n(fk)}}}{{{v(m)}}} = {n(a)}{MS2}"])
-    m, a = 8, 1.96; fk = m * a; mu = a / G
+    m, a = 8, 2.0; fk = m * a; mu = a / G
     o2 = P(rf"A ${v(m)}{KG}$ box slows down at ${v(a)}{MS2}$ as it slides with nothing pushing it. Find the friction "
            r"force and the coefficient of kinetic friction.",
            [U("Kinetic friction", "f_k", "N", fk), U("Coefficient of kinetic friction", r"\mu_k", "", mu)],
            r"$f_k = ma$ from the $x$-equation; then $\mu_k = f_k / (mg)$.",
            [rf"f_k = ma = ({v(m)})({v(a)}) = {n(fk)}{NT}",
-            rf"\mu_k = \dfrac{{f_k}}{{mg}} = \dfrac{{{n(fk)}}}{{({v(m)})(9.8)}} = {n(mu)}"])
+            rf"\mu_k = \dfrac{{f_k}}{{mg}} = \dfrac{{{n(fk)}}}{{({v(m)})(10)}} = {n(mu)}"])
     mu = 0.30; a = mu * G
     o3 = P(rf"A box slides to a stop on a floor with $\mu_k = {v(mu)}$. Its mass isn't given. Find the size of its "
            r"acceleration.",
            [U("Acceleration", "a", "m/s²", a)],
            r"Write $f_k = \mu_k mg$ and set it equal to $ma$. What happens to $m$?",
            [r"\mu_k mg = ma \;\Rightarrow\; a = \mu_k g \quad \text{(the mass cancels)}",
-            rf"a = ({v(mu)})(9.8{MS2}) = {n(a)}{MS2}"])
+            rf"a = ({v(mu)})(10{MS2}) = {n(a)}{MS2}"])
     p["coasting"] = [o1, o2, o3]
 
     # ---- Pulling a sled ----
@@ -1401,14 +1401,14 @@ def build_problems() -> dict:
            rf"horizontal. Kinetic friction is ${v(fk)}{NT}$. Find the normal force and the sled's acceleration.",
            [U("Normal force", "N", "N", N), U("Acceleration", "a", "m/s²", a)],
            r"The $y$-equation is $N + T\sin\theta - W = 0$; the $x$-equation is $T\cos\theta - f_k = ma$.",
-           [rf"N = mg - T\sin\theta = ({v(m)})(9.8) - ({v(T)})\sin {v(th)}{DEG} = {n(N)}{NT}",
+           [rf"N = mg - T\sin\theta = ({v(m)})(10) - ({v(T)})\sin {v(th)}{DEG} = {n(N)}{NT}",
             rf"a = \dfrac{{T\cos\theta - f_k}}{{m}} = \dfrac{{({v(T)})\cos {v(th)}{DEG} - {v(fk)}}}{{{v(m)}}} = {n(a)}{MS2}"])
     m, T, th, mu = 15, 50, 35, 0.15; N = m * G - T * sind(th); fk = mu * N; a = (T * cosd(th) - fk) / m
     q2 = P(rf"A ${v(m)}{KG}$ sled is pulled with ${v(T)}{NT}$ at $\theta = {v(th)}{DEG}$ across snow with "
            rf"$\mu_k = {v(mu)}$. Find the normal force, the friction force, and the acceleration.",
            [U("Normal force", "N", "N", N), U("Kinetic friction", "f_k", "N", fk), U("Acceleration", "a", "m/s²", a)],
            r"Find $N$ first. The rope lifts a little, so $N$ is less than $mg$. Then $f_k = \mu_k N$.",
-           [rf"N = mg - T\sin\theta = ({v(m)})(9.8) - ({v(T)})\sin {v(th)}{DEG} = {n(N)}{NT}",
+           [rf"N = mg - T\sin\theta = ({v(m)})(10) - ({v(T)})\sin {v(th)}{DEG} = {n(N)}{NT}",
             rf"f_k = \mu_k N = ({v(mu)})({n(N)}) = {n(fk)}{NT}",
             rf"a = \dfrac{{T\cos\theta - f_k}}{{m}} = \dfrac{{({v(T)})\cos {v(th)}{DEG} - {n(fk)}}}{{{v(m)}}} = {n(a)}{MS2}"])
     m, th, mu, a = 25, 25, 0.20, 0.8
@@ -1420,7 +1420,7 @@ def build_problems() -> dict:
            [r"T\cos\theta - \mu_k(mg - T\sin\theta) = ma",
             r"T(\cos\theta + \mu_k\sin\theta) = ma + \mu_k mg \;\Rightarrow\; "
             r"T = \dfrac{ma + \mu_k mg}{\cos\theta + \mu_k\sin\theta}",
-            rf"T = \dfrac{{({v(m)})({v(a)}) + ({v(mu)})({v(m)})(9.8)}}{{\cos {v(th)}{DEG} + ({v(mu)})\sin {v(th)}{DEG}}} = {n(T)}{NT}",
+            rf"T = \dfrac{{({v(m)})({v(a)}) + ({v(mu)})({v(m)})(10)}}{{\cos {v(th)}{DEG} + ({v(mu)})\sin {v(th)}{DEG}}} = {n(T)}{NT}",
             rf"N = mg - T\sin\theta = {n(m * G)} - ({n(T)})\sin {v(th)}{DEG} = {n(N)}{NT}"])
     p["sled"] = [q1, q2, q3]
 
@@ -1430,20 +1430,20 @@ def build_problems() -> dict:
            [U("Acceleration", "a", "m/s²", a)],
            r"Use $W\sin\theta = ma$ with $W = mg$. Does the mass matter?",
            [r"mg\sin\theta = ma \;\Rightarrow\; a = g\sin\theta",
-            rf"a = (9.8{MS2})\sin {v(th)}{DEG} = {n(a)}{MS2}"])
+            rf"a = (10{MS2})\sin {v(th)}{DEG} = {n(a)}{MS2}"])
     m, th = 3, 20; N = m * G * cosd(th); a = G * sind(th)
     r2 = P(rf"A ${v(m)}{KG}$ block slides down a frictionless ramp at $\theta = {v(th)}{DEG}$. Find the normal force "
            r"and the acceleration.",
            [U("Normal force", "N", "N", N), U("Acceleration", "a", "m/s²", a)],
            r"The $y$-equation gives $N = W\cos\theta$; the $x$-equation gives $a$.",
-           [rf"N = mg\cos\theta = ({v(m)})(9.8)\cos {v(th)}{DEG} = {n(N)}{NT}",
-            rf"a = g\sin\theta = (9.8)\sin {v(th)}{DEG} = {n(a)}{MS2}"])
+           [rf"N = mg\cos\theta = ({v(m)})(10)\cos {v(th)}{DEG} = {n(N)}{NT}",
+            rf"a = g\sin\theta = (10)\sin {v(th)}{DEG} = {n(a)}{MS2}"])
     a = 6.0; th = math.degrees(math.asin(a / G))
     r3 = P(rf"A block slides down a frictionless ramp with an acceleration of ${v(a)}{MS2}$. Find the angle of the ramp.",
            [U("Ramp angle", r"\theta", "degrees", th)],
            r"Solve $a = g\sin\theta$ for $\theta$ using inverse sine.",
            [r"\sin\theta = \dfrac{a}{g} \;\Rightarrow\; \theta = \sin^{-1}\!\left(\dfrac{a}{g}\right)",
-            rf"\theta = \sin^{{-1}}\!\left(\dfrac{{{v(a)}}}{{9.8}}\right) = {n(th)}{DEG}"])
+            rf"\theta = \sin^{{-1}}\!\left(\dfrac{{{v(a)}}}{{10}}\right) = {n(th)}{DEG}"])
     p["ramp_smooth"] = [r1, r2, r3]
 
     # ---- Box resting on a rough ramp ----
@@ -1452,8 +1452,8 @@ def build_problems() -> dict:
            r"and the normal force.",
            [U("Static friction", "f_s", "N", fs), U("Normal force", "N", "N", N)],
            r"With the box at rest, both equations equal 0.",
-           [rf"f_s = W\sin\theta = ({v(m)})(9.8)\sin {v(th)}{DEG} = {n(fs)}{NT}",
-            rf"N = W\cos\theta = ({v(m)})(9.8)\cos {v(th)}{DEG} = {n(N)}{NT}"])
+           [rf"f_s = W\sin\theta = ({v(m)})(10)\sin {v(th)}{DEG} = {n(fs)}{NT}",
+            rf"N = W\cos\theta = ({v(m)})(10)\cos {v(th)}{DEG} = {n(N)}{NT}"])
     th = 32; mus = math.tan(math.radians(th))
     s2 = P(rf"A box is just about to slip when the ramp is tilted to $\theta = {v(th)}{DEG}$. At that point static "
            r"friction is at its maximum, $f_s = \mu_s N$. Find the coefficient of static friction.",
@@ -1466,7 +1466,7 @@ def build_problems() -> dict:
            [U("Ramp angle", r"\theta", "degrees", th)],
            r"Solve $W\sin\theta - f_s = 0$ for $\theta$.",
            [r"\sin\theta = \dfrac{f_s}{mg}",
-            rf"\theta = \sin^{{-1}}\!\left(\dfrac{{{v(fs)}}}{{({v(m)})(9.8)}}\right) = {n(th)}{DEG}"])
+            rf"\theta = \sin^{{-1}}\!\left(\dfrac{{{v(fs)}}}{{({v(m)})(10)}}\right) = {n(th)}{DEG}"])
     p["ramp_static"] = [s1, s2, s3]
 
     # ---- Block sliding down a rough ramp ----
@@ -1475,22 +1475,22 @@ def build_problems() -> dict:
            r"normal force, the friction force, and the acceleration.",
            [U("Normal force", "N", "N", N), U("Kinetic friction", "f_k", "N", fk), U("Acceleration", "a", "m/s²", a)],
            r"$y$-equation for $N$, then $f_k = \mu_k N$, then the $x$-equation for $a$.",
-           [rf"N = mg\cos\theta = ({v(m)})(9.8)\cos {v(th)}{DEG} = {n(N)}{NT}",
+           [rf"N = mg\cos\theta = ({v(m)})(10)\cos {v(th)}{DEG} = {n(N)}{NT}",
             rf"f_k = \mu_k N = ({v(mu)})({n(N)}) = {n(fk)}{NT}",
-            rf"a = \dfrac{{mg\sin\theta - f_k}}{{m}} = \dfrac{{({v(m)})(9.8)\sin {v(th)}{DEG} - {n(fk)}}}{{{v(m)}}} = {n(a)}{MS2}"])
+            rf"a = \dfrac{{mg\sin\theta - f_k}}{{m}} = \dfrac{{({v(m)})(10)\sin {v(th)}{DEG} - {n(fk)}}}{{{v(m)}}} = {n(a)}{MS2}"])
     th, a = 40, 4.0; mu = (G * sind(th) - a) / (G * cosd(th))
     t2 = P(rf"A block slides down a rough ramp at $\theta = {v(th)}{DEG}$ with an acceleration of ${v(a)}{MS2}$. "
            r"Find the coefficient of kinetic friction.",
            [U("Coefficient of kinetic friction", r"\mu_k", "", mu)],
            r"Substitute $f_k = \mu_k mg\cos\theta$ into the $x$-equation. The mass cancels.",
            [r"mg\sin\theta - \mu_k mg\cos\theta = ma \;\Rightarrow\; \mu_k = \dfrac{g\sin\theta - a}{g\cos\theta}",
-            rf"\mu_k = \dfrac{{(9.8)\sin {v(th)}{DEG} - {v(a)}}}{{(9.8)\cos {v(th)}{DEG}}} = {n(mu)}"])
+            rf"\mu_k = \dfrac{{(10)\sin {v(th)}{DEG} - {v(a)}}}{{(10)\cos {v(th)}{DEG}}} = {n(mu)}"])
     m, th, fk = 2, 30, 4; a = (m * G * sind(th) - fk) / m
     t3 = P(rf"A ${v(m)}{KG}$ block slides down a ramp at $\theta = {v(th)}{DEG}$. Kinetic friction on it is "
            rf"${v(fk)}{NT}$. Find its acceleration.",
            [U("Acceleration", "a", "m/s²", a)],
            r"Use $W\sin\theta - f_k = ma$.",
-           [rf"a = \dfrac{{mg\sin\theta - f_k}}{{m}} = \dfrac{{({v(m)})(9.8)\sin {v(th)}{DEG} - {v(fk)}}}{{{v(m)}}} = {n(a)}{MS2}"])
+           [rf"a = \dfrac{{mg\sin\theta - f_k}}{{m}} = \dfrac{{({v(m)})(10)\sin {v(th)}{DEG} - {v(fk)}}}{{{v(m)}}} = {n(a)}{MS2}"])
     p["ramp_kinetic"] = [t1, t2, t3]
 
     return p
@@ -1519,7 +1519,7 @@ def check_number(text: str, expected: float):
     if expected != 0 and abs(-x - expected) <= tol:
         return False, "Right size, wrong sign. Enter the size (magnitude) of the quantity."
     if expected != 0 and abs(x - expected) <= 0.1 * abs(expected):
-        return False, "Close, but not within 2%. Check your rounding and use g = 9.8 m/s²."
+        return False, "Close, but not within 2%. Check your rounding and use g = 10 m/s²."
     return False, "Not quite. Check which equation you're solving and your algebra."
 
 
@@ -1529,7 +1529,7 @@ def render_problems(sc: dict, sid: str, version: int):
         return
     solved = ss["solved"]
     st.markdown("#### Step 3: Solve problems with numbers")
-    st.markdown(r"Use your equations to find the unknowns. Take $g = 9.8\,\text{m/s}^2$. Answers within 2% count "
+    st.markdown(r"Use your equations to find the unknowns. Take $g = 10\,\text{m/s}^2$. Answers within 2% count "
                 r"as correct, and the hint and worked solution are there if you get stuck.")
     count = sum((sid, i) in solved for i in range(len(probs)))
     st.caption(f"{count} of {len(probs)} problems solved")
