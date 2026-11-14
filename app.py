@@ -412,8 +412,8 @@ const SCENES = {
       `<circle cx="160" cy="60" r="18" fill="currentColor" fill-opacity=".06" ${ST}/>` +
       `<circle cx="160" cy="60" r="3" fill="currentColor"/>` +
       `<line x1="142" y1="60" x2="142" y2="150" ${ST}/><line x1="178" y1="60" x2="178" y2="95" ${ST}/>` +
-      `<rect x="117" y="150" width="50" height="50" rx="3" ${variant === "m1" ? on : off}/>` +
-      `<rect x="160" y="95" width="36" height="36" rx="3" ${variant === "m2" ? on : off}/>` +
+      `<rect x="117" y="150" width="50" height="50" rx="3" ${focus === "m1" ? on : off}/>` +
+      `<rect x="160" y="95" width="36" height="36" rx="3" ${focus === "m2" ? on : off}/>` +
       `<text x="142" y="180" text-anchor="middle" fill="currentColor">${sub(1)}</text>` +
       `<text x="178" y="117" text-anchor="middle" fill="currentColor">${sub(2)}</text>` +
       arrow(95, 150, 95, 200, "currentColor") + txt(82, 180, "a", { italic: true, size: 16 }) +
@@ -421,23 +421,28 @@ const SCENES = {
   },
 
   table_pulley: (variant) => {
+    // variant: "m1" or "m2" = which mass is shaded; a trailing "r" means a rough table
+    const rough = variant.endsWith("r"), focus = variant.slice(0, 2);
+    let tex = "";
+    if (rough) for (let x = 26; x < 226; x += 10)
+      tex += `<line x1="${x}" y1="120" x2="${x + 5}" y2="126" stroke="currentColor" stroke-opacity=".45" stroke-width="1.2"/>`;
     const on = 'fill="#2f6fd6" fill-opacity=".4" stroke="currentColor" stroke-width="2.5"';
     const off = 'fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="4 3"';
     const sub = n => `<tspan font-style="italic" font-family="Times New Roman, serif" font-size="17">m</tspan><tspan dy="4" font-size="11">${n}</tspan>`;
     return `<rect x="20" y="120" width="210" height="12" rx="2" fill="#b07d4f" fill-opacity=".45" ${ST}/>` +
       `<line x1="40" y1="132" x2="40" y2="222" ${ST}/><line x1="210" y1="132" x2="210" y2="222" ${ST}/>` +
-      hatch(10, 230, 222, false) +
+      hatch(10, 230, 222, false) + tex +
       `<line x1="226" y1="122" x2="242" y2="113" ${ST}/>` +
       `<circle cx="242" cy="113" r="12" fill="currentColor" fill-opacity=".06" ${ST}/>` +
       `<circle cx="242" cy="113" r="2.5" fill="currentColor"/>` +
       `<line x1="140" y1="101" x2="242" y2="101" ${ST}/><line x1="254" y1="113" x2="254" y2="170" ${ST}/>` +
-      `<rect x="80" y="82" width="60" height="38" rx="3" ${variant === "m1" ? on : off}/>` +
-      `<rect x="236" y="170" width="36" height="36" rx="3" ${variant === "m2" ? on : off}/>` +
+      `<rect x="80" y="82" width="60" height="38" rx="3" ${focus === "m1" ? on : off}/>` +
+      `<rect x="236" y="170" width="36" height="36" rx="3" ${focus === "m2" ? on : off}/>` +
       `<text x="110" y="107" text-anchor="middle" fill="currentColor">${sub(1)}</text>` +
       `<text x="254" y="193" text-anchor="middle" fill="currentColor">${sub(2)}</text>` +
       arrow(85, 66, 135, 66, "currentColor") + txt(110, 58, "a", { italic: true, size: 16 }) +
       arrow(292, 160, 292, 212, "currentColor") + txt(304, 190, "a", { italic: true, size: 16 }) +
-      txt(125, 150, "frictionless table", { italic: true });
+      txt(125, 150, rough ? "rough table" : "frictionless table", { italic: true });
   },
 
   push: () =>
@@ -831,6 +836,21 @@ SCENARIOS = [
          note="A light string over a frictionless pulley pulls with the same tension T on both masses, and "
               "they share the same size of acceleration a. Together with T = m₁a for the box, this lets you "
               "solve for a and T. Notice T is less than W₂, since m₂ accelerates downward."),
+    dict(id="table_box_friction", title="Pulley: box on a rough table", scene="table_pulley", variant="m1r",
+         angled=False,
+         description="A box of mass m₁ sits on a rough table. A light string runs from the box over a "
+                     "frictionless pulley at the table's edge to a hanging mass m₂. When released, the box "
+                     "slides to the right and speeds up while the hanging mass accelerates downward. "
+                     "Draw the free-body diagram for **m₁** (the box on the table, shaded).",
+         caption="Shaded box m₁ slides right on a rough table, speeding up", axis_angle=0, axes=STANDARD_AXES,
+         answer={"tension": 0, "kfriction": 180, "weight": 270, "normal": 90},
+         symbols={"weight": ("W", "1", "W_1")}, mass_sub="1",
+         terms_x=[("tension", "", 1), ("kfriction", "", -1)],
+         terms_y=[("normal", "", 1), ("weight", "", -1)], rhs_x="ma", rhs_y="0",
+         tex_x=r"\Sigma F_x = T - f_k = m_1 a", tex_y=r"\Sigma F_y = N - W_1 = 0",
+         note="Friction opposes the sliding, so the net horizontal force is T − f_k. Since N = W₁ here, "
+              "f_k = μ_k N = μ_k m₁g. The hanging mass's free-body diagram is the same as on the "
+              "frictionless table (T − W₂ = −m₂a), so the two equations together give a and T."),
     dict(id="push", title="Pushing a box", scene="push", variant="", angled=False,
          description="A student pushes horizontally on a box. The box slides to the right across a rough "
                      "floor and speeds up.",
