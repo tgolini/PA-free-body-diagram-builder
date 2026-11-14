@@ -6,7 +6,7 @@ Students:
   1. Read a situation.
   2. Drag forces onto a free-body diagram, aiming each arrow the way the force acts.
   3. Once the diagram is correct, build ΣFx and ΣFy by dragging terms into each equation,
-     setting each term's sign, and choosing whether the sum equals ma or 0.
+     setting each term's sign, and choosing whether the sum equals ma, −ma, or 0.
 
 Run locally:   streamlit run app.py
 Files needed:  app.py and requirements.txt (nothing else)
@@ -392,12 +392,33 @@ const SCENES = {
     [110, 140, 180, 210].map(x => `<line x1="${x}" y1="225" x2="${x}" y2="195" stroke="currentColor" stroke-opacity=".35" stroke-width="1.5"/>`).join("") +
     arrow(255, 70, 255, 160, "currentColor") + txt(268, 120, "v", { italic: true, size: 16 }),
 
-  elevator: () =>
-    `<rect x="100" y="40" width="120" height="180" rx="4" fill="currentColor" fill-opacity=".05" ${ST}/>` +
-    `<line x1="160" y1="0" x2="160" y2="40" ${ST}/>` +
-    person(160, 108) +
-    arrow(255, 190, 255, 80, "currentColor") + txt(268, 140, "a", { italic: true, size: 16 }) +
-    arrow(285, 190, 285, 110, "currentColor") + txt(298, 155, "v", { italic: true, size: 16 }),
+  elevator: (variant) => {
+    const down = variant === "down";
+    return `<rect x="100" y="40" width="120" height="180" rx="4" fill="currentColor" fill-opacity=".05" ${ST}/>` +
+      `<line x1="160" y1="0" x2="160" y2="40" ${ST}/>` +
+      person(160, 108) +
+      (down ? arrow(255, 80, 255, 190, "currentColor") : arrow(255, 190, 255, 80, "currentColor")) +
+      txt(268, 140, "a", { italic: true, size: 16 }) +
+      (down ? arrow(285, 110, 285, 190, "currentColor") : arrow(285, 190, 285, 110, "currentColor")) +
+      txt(298, 155, "v", { italic: true, size: 16 });
+  },
+
+  atwood: (variant) => {
+    const on = 'fill="#2f6fd6" fill-opacity=".4" stroke="currentColor" stroke-width="2.5"';
+    const off = 'fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="4 3"';
+    const sub = n => `<tspan font-style="italic" font-family="Times New Roman, serif" font-size="17">m</tspan><tspan dy="4" font-size="11">${n}</tspan>`;
+    return hatch(110, 210, 20, true) +
+      `<line x1="160" y1="20" x2="160" y2="44" ${ST}/>` +
+      `<circle cx="160" cy="60" r="18" fill="currentColor" fill-opacity=".06" ${ST}/>` +
+      `<circle cx="160" cy="60" r="3" fill="currentColor"/>` +
+      `<line x1="142" y1="60" x2="142" y2="150" ${ST}/><line x1="178" y1="60" x2="178" y2="95" ${ST}/>` +
+      `<rect x="117" y="150" width="50" height="50" rx="3" ${variant === "m1" ? on : off}/>` +
+      `<rect x="160" y="95" width="36" height="36" rx="3" ${variant === "m2" ? on : off}/>` +
+      `<text x="142" y="180" text-anchor="middle" fill="currentColor">${sub(1)}</text>` +
+      `<text x="178" y="117" text-anchor="middle" fill="currentColor">${sub(2)}</text>` +
+      arrow(95, 150, 95, 200, "currentColor") + txt(82, 180, "a", { italic: true, size: 16 }) +
+      arrow(225, 135, 225, 85, "currentColor") + txt(240, 115, "a", { italic: true, size: 16 });
+  },
 
   push: () =>
     hatch(30, 290, 190, false) +
@@ -497,7 +518,7 @@ EQ_HTML = r"""<!DOCTYPE html>
 </div>
 
 <script>
-let terms = [], state = blank(), locked = false, initialized = false;
+let terms = [], state = blank(), locked = false, initialized = false, massSub = "";
 function blank() { return { x: { terms: [], rhs: null }, y: { terms: [], rhs: null } }; }
 
 // ---------- Streamlit component protocol ----------
@@ -520,6 +541,7 @@ window.addEventListener("message", (event) => {
   if (d.theme && d.theme.primaryColor) document.documentElement.style.setProperty("--accent", d.theme.primaryColor);
   if (!initialized) {
     terms = args.terms || [];
+    massSub = args.mass_sub || "";
     if (args.initial && args.initial.x && args.initial.y) state = args.initial;
     initialized = true;
     buildBank();
@@ -597,7 +619,8 @@ function render() {
     const eq = document.createElement("span"); eq.className = "m"; eq.textContent = "="; row.appendChild(eq);
 
     const rhs = document.createElement("div"); rhs.className = "rhs";
-    [["ma", "<i>ma</i>"], ["0", "0"]].forEach(([v, html]) => {
+    const ma = `<i>m</i>${massSub ? `<sub>${massSub}</sub>` : ""}<i>a</i>`;
+    [["ma", ma], ["-ma", "−" + ma], ["0", "0"]].forEach(([v, html]) => {
       const b = document.createElement("button");
       b.innerHTML = `<span class="m">${html}</span>`;
       b.classList.toggle("on", state[axis].rhs === v);
@@ -678,8 +701,18 @@ FORCES = {
                 hint="Air resistance points opposite the object's velocity."),
 }
 
-FORCE_PAYLOAD = [dict(id=fid, name=f["name"], base=f["base"], sub=f["sub"], color=f["color"])
-                 for fid, f in FORCES.items()]
+def symbol(fid: str, sc: dict):
+    """(base, subscript, LaTeX) for a force, allowing per-situation names such as W₁."""
+    f = FORCES[fid]
+    return sc.get("symbols", {}).get(fid, (f["base"], f["sub"], f["tex"]))
+
+
+def force_payload(sc: dict) -> list:
+    out = []
+    for fid, f in FORCES.items():
+        base, sub, _ = symbol(fid, sc)
+        out.append(dict(id=fid, name=f["name"], base=base, sub=sub, color=f["color"]))
+    return out
 
 # ---------------------------------------------------------------------------
 # Situations
@@ -696,33 +729,67 @@ SCENARIOS = [
          description="A textbook sits at rest on a level table.",
          caption="At rest on a level table", axis_angle=0, axes=STANDARD_AXES,
          answer={"weight": 270, "normal": 90},
-         terms_x=[], terms_y=[("normal", "", 1), ("weight", "", -1)], ax=False, ay=False,
+         terms_x=[], terms_y=[("normal", "", 1), ("weight", "", -1)], rhs_x="0", rhs_y="0",
          tex_x=r"\Sigma F_x = 0", tex_y=r"\Sigma F_y = N - W = 0"),
     dict(id="lamp", title="Hanging lamp", scene="hanging", variant="", angled=False,
          description="A lamp hangs at rest from a single vertical cord attached to the ceiling.",
          caption="Hanging at rest from one cord", axis_angle=0, axes=STANDARD_AXES,
          answer={"tension": 90, "weight": 270},
-         terms_x=[], terms_y=[("tension", "", 1), ("weight", "", -1)], ax=False, ay=False,
+         terms_x=[], terms_y=[("tension", "", 1), ("weight", "", -1)], rhs_x="0", rhs_y="0",
          tex_x=r"\Sigma F_x = 0", tex_y=r"\Sigma F_y = T - W = 0"),
     dict(id="skydiver", title="Skydiver at terminal velocity", scene="skydiver", variant="", angled=False,
          description="A skydiver falls straight down at a constant (terminal) velocity.",
          caption="Falling at constant velocity", axis_angle=0, axes=STANDARD_AXES,
          answer={"weight": 270, "air": 90},
-         terms_x=[], terms_y=[("air", "", 1), ("weight", "", -1)], ax=False, ay=False,
+         terms_x=[], terms_y=[("air", "", 1), ("weight", "", -1)], rhs_x="0", rhs_y="0",
          tex_x=r"\Sigma F_x = 0", tex_y=r"\Sigma F_y = F_{air} - W = 0"),
-    dict(id="elevator", title="Person in an elevator", scene="elevator", variant="", angled=False,
+    dict(id="elevator", title="Elevator accelerating upward", scene="elevator", variant="up", angled=False,
          description="A person stands on the floor of an elevator that is moving upward and speeding up.",
          caption="Moving upward and speeding up", axis_angle=0, axes=STANDARD_AXES,
          answer={"normal": 90, "weight": 270},
-         terms_x=[], terms_y=[("normal", "", 1), ("weight", "", -1)], ax=False, ay=True,
-         tex_x=r"\Sigma F_x = 0", tex_y=r"\Sigma F_y = N - W = ma"),
+         terms_x=[], terms_y=[("normal", "", 1), ("weight", "", -1)], rhs_x="0", rhs_y="ma",
+         tex_x=r"\Sigma F_x = 0", tex_y=r"\Sigma F_y = N - W = ma",
+         note="The acceleration points up (+y), so N is greater than W. The person would feel heavier."),
+    dict(id="elevator_down", title="Elevator accelerating downward", scene="elevator", variant="down",
+         angled=False,
+         description="A person stands on the floor of an elevator that is moving downward and speeding up.",
+         caption="Moving downward and speeding up", axis_angle=0, axes=STANDARD_AXES,
+         answer={"normal": 90, "weight": 270},
+         terms_x=[], terms_y=[("normal", "", 1), ("weight", "", -1)], rhs_x="0", rhs_y="-ma",
+         tex_x=r"\Sigma F_x = 0", tex_y=r"\Sigma F_y = N - W = -ma",
+         note="The acceleration points down (−y), so the right side is −ma, and N is less than W. "
+              "The person would feel lighter."),
+    dict(id="atwood_heavy", title="Pulley: heavier hanging mass", scene="atwood", variant="m1",
+         angled=False,
+         description="Two masses hang from a light rope that passes over a frictionless pulley. The heavier "
+                     "mass m₁ accelerates downward while the lighter mass m₂ accelerates upward. "
+                     "Draw the free-body diagram for **m₁** (the heavier, shaded mass).",
+         caption="Shaded mass m₁ accelerates downward", axis_angle=0, axes=STANDARD_AXES,
+         answer={"tension": 90, "weight": 270},
+         symbols={"weight": ("W", "1", "W_1")}, mass_sub="1",
+         terms_x=[], terms_y=[("tension", "", 1), ("weight", "", -1)], rhs_x="0", rhs_y="-ma",
+         tex_x=r"\Sigma F_x = 0", tex_y=r"\Sigma F_y = T - W_1 = -m_1 a",
+         note="m₁ accelerates in the −y direction, so its right side is −m₁a, and the tension is "
+              "less than its weight."),
+    dict(id="atwood_light", title="Pulley: lighter hanging mass", scene="atwood", variant="m2",
+         angled=False,
+         description="The same pulley system: the heavier mass m₁ accelerates downward while the lighter "
+                     "mass m₂ accelerates upward. Now draw the free-body diagram for **m₂** "
+                     "(the lighter, shaded mass).",
+         caption="Shaded mass m₂ accelerates upward", axis_angle=0, axes=STANDARD_AXES,
+         answer={"tension": 90, "weight": 270},
+         symbols={"weight": ("W", "2", "W_2")}, mass_sub="2",
+         terms_x=[], terms_y=[("tension", "", 1), ("weight", "", -1)], rhs_x="0", rhs_y="ma",
+         tex_x=r"\Sigma F_x = 0", tex_y=r"\Sigma F_y = T - W_2 = m_2 a",
+         note="The rope pulls on both masses with the same tension T, and both masses have the same "
+              "size of acceleration a, so these two equations can be solved together for a and T."),
     dict(id="push", title="Pushing a box", scene="push", variant="", angled=False,
          description="A student pushes horizontally on a box. The box slides to the right across a rough "
                      "floor and speeds up.",
          caption="Sliding right on a rough floor, speeding up", axis_angle=0, axes=STANDARD_AXES,
          answer={"applied": 0, "kfriction": 180, "weight": 270, "normal": 90},
          terms_x=[("applied", "", 1), ("kfriction", "", -1)],
-         terms_y=[("normal", "", 1), ("weight", "", -1)], ax=True, ay=False,
+         terms_y=[("normal", "", 1), ("weight", "", -1)], rhs_x="ma", rhs_y="0",
          tex_x=r"\Sigma F_x = F_A - f_k = ma", tex_y=r"\Sigma F_y = N - W = 0"),
     dict(id="sled", title="Pulling a sled", scene="sled", variant="", angled=True,
          description="A child pulls a sled across level snow with a rope held at angle θ above the "
@@ -730,7 +797,7 @@ SCENARIOS = [
          caption="Pulled at angle θ, speeding up", axis_angle=0, axes=STANDARD_AXES,
          answer={"tension": 30, "kfriction": 180, "weight": 270, "normal": 90},
          terms_x=[("tension", "cos", 1), ("kfriction", "", -1)],
-         terms_y=[("normal", "", 1), ("tension", "sin", 1), ("weight", "", -1)], ax=True, ay=False,
+         terms_y=[("normal", "", 1), ("tension", "sin", 1), ("weight", "", -1)], rhs_x="ma", rhs_y="0",
          tex_x=r"\Sigma F_x = T\cos\theta - f_k = ma",
          tex_y=r"\Sigma F_y = N + T\sin\theta - W = 0"),
     dict(id="ramp_smooth", title="Block on a frictionless ramp", scene="incline", variant="frictionless",
@@ -739,7 +806,7 @@ SCENARIOS = [
          caption="Frictionless ramp, sliding down", axis_angle=-30, axes=INCLINE_AXES,
          answer={"weight": 270, "normal": 60},
          terms_x=[("weight", "sin", 1)],
-         terms_y=[("normal", "", 1), ("weight", "cos", -1)], ax=True, ay=False,
+         terms_y=[("normal", "", 1), ("weight", "cos", -1)], rhs_x="ma", rhs_y="0",
          tex_x=r"\Sigma F_x = W\sin\theta = ma", tex_y=r"\Sigma F_y = N - W\cos\theta = 0"),
     dict(id="ramp_static", title="Box resting on a rough ramp", scene="incline", variant="static",
          angled=True,
@@ -747,7 +814,7 @@ SCENARIOS = [
          caption="Rough ramp, box at rest", axis_angle=-30, axes=INCLINE_AXES,
          answer={"weight": 270, "normal": 60, "sfriction": 150},
          terms_x=[("weight", "sin", 1), ("sfriction", "", -1)],
-         terms_y=[("normal", "", 1), ("weight", "cos", -1)], ax=False, ay=False,
+         terms_y=[("normal", "", 1), ("weight", "cos", -1)], rhs_x="0", rhs_y="0",
          tex_x=r"\Sigma F_x = W\sin\theta - f_s = 0", tex_y=r"\Sigma F_y = N - W\cos\theta = 0"),
     dict(id="ramp_kinetic", title="Block sliding down a rough ramp", scene="incline", variant="kinetic",
          angled=True,
@@ -755,7 +822,7 @@ SCENARIOS = [
          caption="Rough ramp, sliding down and speeding up", axis_angle=-30, axes=INCLINE_AXES,
          answer={"weight": 270, "normal": 60, "kfriction": 150},
          terms_x=[("weight", "sin", 1), ("kfriction", "", -1)],
-         terms_y=[("normal", "", 1), ("weight", "cos", -1)], ax=True, ay=False,
+         terms_y=[("normal", "", 1), ("weight", "cos", -1)], rhs_x="ma", rhs_y="0",
          tex_x=r"\Sigma F_x = W\sin\theta - f_k = ma", tex_y=r"\Sigma F_y = N - W\cos\theta = 0"),
 ]
 
@@ -827,15 +894,15 @@ def check_fbd(placed: list, sc: dict):
 # ---------------------------------------------------------------------------
 # Equation building and checking
 # ---------------------------------------------------------------------------
-def term_tex(fid: str, comp: str = "") -> str:
-    return FORCES[fid]["tex"] + (rf"\{comp}\theta" if comp else "")
+def term_tex(fid: str, sc: dict, comp: str = "") -> str:
+    return symbol(fid, sc)[2] + (rf"\{comp}\theta" if comp else "")
 
 
 def term_bank(sc: dict) -> list:
     """Terms students can drag: each force in the diagram, plus sin θ / cos θ versions
     in situations with an angle."""
     comps = ["", "sin", "cos"] if sc["angled"] else [""]
-    return [dict(id=f"{fid}|{c}", base=FORCES[fid]["base"], sub=FORCES[fid]["sub"], comp=c)
+    return [dict(id=f"{fid}|{c}", base=symbol(fid, sc)[0], sub=symbol(fid, sc)[1], comp=c)
             for fid in sc["answer"] for c in comps]
 
 
@@ -843,8 +910,9 @@ def check_axis(data: dict, sc: dict, axis: str):
     data = data or {}
     expected = {(f, c): s for f, c, s in sc[f"terms_{axis}"]}
     expected_forces = {f for f, _ in expected}
-    accelerates = sc["ax"] if axis == "x" else sc["ay"]
-
+    expected_rhs = sc[f"rhs_{axis}"]  # "ma", "-ma", or "0"
+    msub = sc.get("mass_sub", "")
+    ma_tex = f"m_{msub} a" if msub else "ma"
     student = []
     for t in data.get("terms", []):
         fid, _, comp = t.get("id", "").partition("|")
@@ -855,40 +923,46 @@ def check_axis(data: dict, sc: dict, axis: str):
     student_forces = [f for f, _, _ in student]
     for fid in dict.fromkeys(student_forces):
         if student_forces.count(fid) > 1:
-            issues.append(f"${term_tex(fid)}$ appears more than once. Each force contributes just one "
+            issues.append(f"${term_tex(fid, sc)}$ appears more than once. Each force contributes just one "
                           f"component along an axis.")
         if fid not in expected_forces:
-            issues.append(f"${term_tex(fid)}$ is perpendicular to the {axis}-axis, so it has no "
+            issues.append(f"${term_tex(fid, sc)}$ is perpendicular to the {axis}-axis, so it has no "
                           f"{axis}-component.")
     for (fid, comp), sign in expected.items():
         matches = [(c, s) for f, c, s in student if f == fid]
         if not matches:
-            issues.append(f"Your equation is missing a term for ${term_tex(fid)}$.")
+            issues.append(f"Your equation is missing a term for ${term_tex(fid, sc)}$.")
             continue
         s_comp, s_sign = matches[0]
         if s_comp != comp:
             if comp == "":
-                issues.append(f"${term_tex(fid)}$ lies along the {axis}-axis, so use the whole force, "
+                issues.append(f"${term_tex(fid, sc)}$ lies along the {axis}-axis, so use the whole force, "
                               rf"without $\sin\theta$ or $\cos\theta$.")
             elif s_comp == "":
-                issues.append(f"${term_tex(fid)}$ is at an angle to the {axis}-axis, so only its "
+                issues.append(f"${term_tex(fid, sc)}$ is at an angle to the {axis}-axis, so only its "
                               rf"{axis}-component counts. Use $\sin\theta$ or $\cos\theta$.")
             else:
-                issues.append(f"Check your trig for ${term_tex(fid)}$. Is its {axis}-component the "
+                issues.append(f"Check your trig for ${term_tex(fid, sc)}$. Is its {axis}-component the "
                               rf"$\sin\theta$ part or the $\cos\theta$ part?")
         elif s_sign != sign:
-            issues.append(f"Check the sign of ${term_tex(fid, comp)}$. Does that component point in "
+            issues.append(f"Check the sign of ${term_tex(fid, sc, comp)}$. Does it point in "
                           f"the +{axis} or −{axis} direction?")
 
     rhs = data.get("rhs")
+    sum_tex = f"\\Sigma F_{axis}"
     if rhs is None:
-        issues.append(f"Choose whether $\\Sigma F_{axis}$ equals $ma$ or 0.")
-    elif (rhs == "ma") != accelerates:
-        if accelerates:
-            issues.append(f"The object is accelerating along the {axis}-axis, so $\\Sigma F_{axis} = ma$.")
+        issues.append(f"Choose whether ${sum_tex}$ equals ${ma_tex}$, $-{ma_tex}$, or 0.")
+    elif rhs != expected_rhs:
+        if expected_rhs == "0":
+            issues.append(f"The object isn't accelerating along the {axis}-axis (it's at rest or moving at "
+                          f"constant velocity in that direction), so ${sum_tex} = 0$.")
+        elif rhs == "0":
+            issues.append(f"The object is accelerating along the {axis}-axis, so ${sum_tex}$ isn't 0.")
         else:
-            issues.append(f"The object isn't accelerating along the {axis}-axis (it's at rest or moving "
-                          f"at constant velocity in that direction), so $\\Sigma F_{axis} = 0$.")
+            d = "+" if expected_rhs == "ma" else "−"
+            issues.append(f"Check the direction of the acceleration. It points in the {d}{axis} direction, "
+                          f"and $a$ stands for its size, so the right side is "
+                          f"${'' if expected_rhs == 'ma' else '-'}{ma_tex}$.")
     return not issues, issues
 
 
@@ -953,7 +1027,7 @@ st.caption("Drag every force acting **on the object** onto the diagram and drop 
 value = fbd_builder(
     scenario=dict(id=sid, scene=sc["scene"], variant=sc["variant"],
                   caption=sc["caption"], axis_angle=sc["axis_angle"]),
-    forces=FORCE_PAYLOAD,
+    forces=force_payload(sc),
     initial=ss.get(f"placed_{sid}", []),
     locked=(stage != "fbd"),
     key=f"fbd_{sid}_{version}",
@@ -982,11 +1056,12 @@ if stage in ("eq", "done"):
     st.markdown("#### Step 2: Write Newton's second law for each axis")
     st.markdown("Build $\\Sigma F_x$ and $\\Sigma F_y$ from the forces in your diagram. Drag each force (or "
                 "its component) into the equation it belongs in, click its sign to switch between + and −, "
-                "then decide whether the sum equals $ma$ or 0. Use the axis directions given above, and "
+                "then decide whether the sum equals $ma$, $-ma$, or 0 ($a$ is the size of the acceleration). Use the axis directions given above, and "
                 "leave an equation empty if no forces act along that axis.")
 
     eq_value = eq_builder(
         terms=term_bank(sc),
+        mass_sub=sc.get("mass_sub", ""),
         initial=ss.get(f"eqstate_{sid}"),
         locked=(stage == "done"),
         key=f"eq_{sid}_{version}",
@@ -1021,6 +1096,8 @@ if stage in ("eq", "done"):
         st.success("Both equations are correct:")
         st.latex(sc["tex_x"])
         st.latex(sc["tex_y"])
+        if sc.get("note"):
+            st.info(sc["note"])
         if idx + 1 < len(SCENARIOS):
             st.button("Next situation", type="primary", on_click=go_to, args=(idx + 1,))
         elif len(completed) == len(SCENARIOS):
