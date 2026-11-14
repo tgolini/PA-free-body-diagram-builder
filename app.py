@@ -8,10 +8,11 @@ Students:
   3. Once the diagram is correct, write Newton's second law for the x- and y-axes.
 
 Run locally:   streamlit run app.py
-Folder layout: app.py, requirements.txt, fbd_component/index.html
+Files needed: app.py and requirements.txt (nothing else)
 """
 
 import re
+import tempfile
 from pathlib import Path
 
 import streamlit as st
@@ -27,10 +28,439 @@ from sympy.parsing.sympy_parser import (
 
 st.set_page_config(page_title="Free-Body Diagram Builder", page_icon="🧭", layout="wide")
 
+# HTML + JavaScript for the drag-and-drop diagram
+COMPONENT_HTML = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  :root { --fg: #262730; --border: rgba(128,128,128,.35); --panel: rgba(128,128,128,.06); --grid: rgba(128,128,128,.13); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: transparent; color: var(--fg);
+    font-family: "Source Sans Pro", "Source Sans 3", system-ui, -apple-system, sans-serif; }
+  #root { padding: 2px 2px 10px; }
+  .panels { display: flex; gap: 14px; flex-wrap: wrap; }
+  .panel { flex: 1 1 300px; min-width: 270px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--panel); padding: 8px 10px 6px; }
+  .panel h4 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+  svg { width: 100%; height: auto; display: block; }
+  #fbd { touch-action: none; }
+  .note { font-size: 13px; opacity: .78; margin: 2px 0 0; min-height: 18px; }
+  .palette-title { margin: 14px 0 6px; font-size: 14px; font-weight: 600; }
+  #palette { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px;
+    border: 1.5px solid var(--border); background: var(--panel); cursor: grab; user-select: none;
+    -webkit-user-select: none; touch-action: none; font-size: 14px; color: var(--fg); }
+  .chip:hover { border-color: currentColor; }
+  .chip.used { opacity: .5; }
+  .chip.locked { cursor: default; opacity: .45; }
+  .sw { width: 20px; height: 4px; border-radius: 2px; flex: none; }
+  .sym { font-family: "Times New Roman", Times, serif; font-style: italic; font-size: 17px; font-weight: 600; }
+  .sym sub { font-size: 11px; }
+  #placed { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+  .tag { display: inline-flex; align-items: center; gap: 2px; padding: 1px 2px 1px 9px; border-radius: 6px;
+    border: 1px solid var(--border); }
+  .tag button, .clear { border: none; background: transparent; color: inherit; cursor: pointer;
+    font-size: 15px; line-height: 1; padding: 3px 7px; border-radius: 4px; }
+  .tag button:hover, .clear:hover { background: rgba(128,128,128,.2); }
+  .clear { margin-left: auto; font-size: 13px; border: 1px solid var(--border); }
+  .ghost { position: fixed; pointer-events: none; z-index: 1000; transform: translate(-50%, -50%); }
+</style>
+</head>
+<body>
+<div id="root">
+  <div class="panels">
+    <div class="panel">
+      <h4>Situation</h4>
+      <svg id="scene" viewBox="0 0 320 240" role="img" aria-label="Sketch of the situation"></svg>
+      <p class="note" id="caption"></p>
+    </div>
+    <div class="panel">
+      <h4>Your free-body diagram</h4>
+      <svg id="fbd" viewBox="-170 -150 340 300" role="img" aria-label="Free-body diagram workspace"></svg>
+      <p class="note" id="status"></p>
+    </div>
+  </div>
+  <div class="palette-title" id="paletteTitle">Forces you can use (not all of them are real forces)</div>
+  <div id="palette"></div>
+  <div id="placed"></div>
+</div>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+const fbd = document.getElementById("fbd");
+const sceneSvg = document.getElementById("scene");
+const statusEl = document.getElementById("status");
+
+let scenario = null, forces = [], placed = [], locked = false, initialized = false, preview = null;
+
+// ---------- Streamlit component protocol (no build tools needed) ----------
+function post(type, extra) {
+  window.parent.postMessage(Object.assign({ isStreamlitMessage: true, type: type }, extra || {}), "*");
+}
+function sendValue() {
+  post("streamlit:setComponentValue", {
+    value: placed.map(p => ({ id: p.id, angle: p.angle, len: Math.round(p.len) })),
+    dataType: "json",
+  });
+}
+let lastHeight = 0;
+function sendHeight() {
+  const h = Math.ceil(document.getElementById("root").getBoundingClientRect().height) + 6;
+  if (h !== lastHeight) { lastHeight = h; post("streamlit:setFrameHeight", { height: h }); }
+}
+
+window.addEventListener("message", (event) => {
+  const d = event.data;
+  if (!d || d.type !== "streamlit:render") return;
+  const args = d.args || {};
+  if (d.theme && d.theme.textColor) document.documentElement.style.setProperty("--fg", d.theme.textColor);
+  if (!initialized || (scenario && args.scenario && args.scenario.id !== scenario.id)) {
+    scenario = args.scenario;
+    forces = args.forces || [];
+    placed = (args.initial || []).map(p => ({ id: p.id, angle: p.angle, len: p.len || 115 }));
+    initialized = true;
+    drawScene();
+    buildPalette();
+  }
+  locked = !!args.locked;
+  render();
+  sendHeight();
+});
+window.addEventListener("resize", sendHeight);
+post("streamlit:componentReady", { apiVersion: 1 });
+
+// ---------- Helpers ----------
+function el(tag, attrs, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+const forceById = id => forces.find(f => f.id === id);
+const rad = d => d * Math.PI / 180;
+const norm = d => ((d % 360) + 360) % 360;
+function symHTML(f) { return f.base + (f.sub ? "<sub>" + f.sub + "</sub>" : ""); }
+function svgPoint(e) {
+  const pt = fbd.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  return pt.matrixTransform(fbd.getScreenCTM().inverse());
+}
+function overFbd(e) {
+  const r = fbd.getBoundingClientRect();
+  return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+}
+// Direction from the object to the pointer, snapped to 15° steps
+function aimFrom(e) {
+  const p = svgPoint(e);
+  const dist = Math.hypot(p.x, p.y);
+  const angle = norm(Math.round(Math.atan2(-p.y, p.x) * 180 / Math.PI / 15) * 15);
+  return { dist: dist, angle: angle, len: Math.max(70, Math.min(130, dist)) };
+}
+
+// ---------- Drawing the free-body diagram ----------
+function drawArrow(parent, angle, len, color, dashed) {
+  const ux = Math.cos(rad(angle)), uy = -Math.sin(rad(angle));
+  const tx = ux * len, ty = uy * len, hl = 14, hw = 7;
+  const bx = tx - ux * hl, by = ty - uy * hl, px = -uy, py = ux;
+  const g = el("g", {}, parent);
+  el("line", { x1: 0, y1: 0, x2: tx, y2: ty, stroke: "transparent", "stroke-width": 20 }, g); // easy to grab
+  el("line", { x1: 0, y1: 0, x2: bx, y2: by, stroke: color, "stroke-width": 3.5,
+               "stroke-linecap": "round", "stroke-dasharray": dashed ? "6 5" : "none" }, g);
+  el("polygon", { points: `${tx},${ty} ${bx + px * hw},${by + py * hw} ${bx - px * hw},${by - py * hw}`,
+                  fill: color }, g);
+  return g;
+}
+function drawLabel(parent, f, angle, len) {
+  // sit beside the tip (counterclockwise side) so labels don't land on the axis labels
+  const ux = Math.cos(rad(angle)), uy = -Math.sin(rad(angle)), px = uy, py = -ux;
+  const t = el("text", { x: ux * (len - 4) + px * 20, y: uy * (len - 4) + py * 20 + 6, "text-anchor": "middle", fill: f.color,
+    "font-size": 18, "font-weight": 700, "font-style": "italic",
+    "font-family": "'Times New Roman', Times, serif" }, parent);
+  const base = el("tspan", {}, t); base.textContent = f.base;
+  if (f.sub) { const s = el("tspan", { dy: 5, "font-size": 12 }, t); s.textContent = f.sub; }
+}
+
+function render() {
+  fbd.innerHTML = "";
+  // graph-paper background
+  const defs = el("defs", {}, fbd);
+  const pat = el("pattern", { id: "grid", width: 20, height: 20, patternUnits: "userSpaceOnUse", x: -170, y: -150 }, defs);
+  el("path", { d: "M20,0 L0,0 0,20", fill: "none", style: "stroke: var(--grid)", "stroke-width": 1 }, pat);
+  el("rect", { x: -170, y: -150, width: 340, height: 300, fill: "url(#grid)" }, fbd);
+
+  // axes (tilted for inclines)
+  const A = scenario.axis_angle || 0, L = 140;
+  [[A, "x"], [A + 90, "y"]].forEach(([ang, lab]) => {
+    const ux = Math.cos(rad(ang)), uy = -Math.sin(rad(ang)), px = -uy, py = ux;
+    el("line", { x1: -ux * L, y1: -uy * L, x2: ux * L, y2: uy * L, stroke: "currentColor",
+                 "stroke-opacity": .5, "stroke-width": 1.5 }, fbd);
+    const tx = ux * L, ty = uy * L;
+    el("polygon", { points: `${tx},${ty} ${tx - ux * 10 + px * 5},${ty - uy * 10 + py * 5} ${tx - ux * 10 - px * 5},${ty - uy * 10 - py * 5}`,
+                    fill: "currentColor", "fill-opacity": .5 }, fbd);
+    const t = el("text", { x: ux * (L - 14) + px * 14, y: uy * (L - 14) + py * 14 + 5, "text-anchor": "middle",
+      fill: "currentColor", "fill-opacity": .75, "font-size": 15, "font-family": "'Times New Roman', Times, serif" }, fbd);
+    t.textContent = "+";
+    const ts = el("tspan", { "font-style": "italic" }, t); ts.textContent = lab;
+  });
+
+  placed.forEach(p => {
+    const f = forceById(p.id); if (!f) return;
+    const g = drawArrow(fbd, p.angle, p.len, f.color, false);
+    drawLabel(g, f, p.angle, p.len);
+    if (p.off) g.setAttribute("opacity", .25);
+    if (!locked) {
+      g.style.cursor = "grab";
+      g.addEventListener("pointerdown", ev => startArrowDrag(ev, p));
+    }
+  });
+  if (preview) {
+    const f = forceById(preview.id);
+    const g = drawArrow(fbd, preview.angle, preview.len, f.color, true);
+    drawLabel(g, f, preview.angle, preview.len);
+    g.setAttribute("opacity", .7);
+  }
+  // the object, drawn as a dot
+  el("circle", { cx: 0, cy: 0, r: 7, fill: "currentColor" }, fbd);
+
+  if (locked) statusEl.textContent = "Diagram checked and locked.";
+  updatePalette();
+  updatePlacedList();
+}
+
+// ---------- Dragging ----------
+function startPaletteDrag(ev, f, chip) {
+  if (locked) return;
+  ev.preventDefault();
+  chip.setPointerCapture(ev.pointerId);
+  const ghost = document.createElement("div");
+  ghost.className = "chip ghost";
+  ghost.innerHTML = chip.innerHTML;
+  document.body.appendChild(ghost);
+
+  const move = e => {
+    ghost.style.left = e.clientX + "px"; ghost.style.top = e.clientY + "px";
+    if (overFbd(e)) {
+      const a = aimFrom(e);
+      preview = a.dist >= 20 ? { id: f.id, angle: a.angle, len: a.len } : null;
+      ghost.style.opacity = .3;
+    } else { preview = null; ghost.style.opacity = 1; }
+    render();
+  };
+  const end = e => {
+    chip.removeEventListener("pointermove", move);
+    chip.removeEventListener("pointerup", end);
+    chip.removeEventListener("pointercancel", end);
+    ghost.remove(); preview = null;
+    if (e.type === "pointerup" && overFbd(e)) {
+      const a = aimFrom(e);
+      if (a.dist < 20) {
+        statusEl.textContent = "Drop the force a little farther from the dot so its direction is clear.";
+      } else {
+        placed = placed.filter(q => q.id !== f.id);
+        placed.push({ id: f.id, angle: a.angle, len: a.len });
+        statusEl.textContent = "";
+        sendValue();
+      }
+    }
+    render(); sendHeight();
+  };
+  move(ev);
+  chip.addEventListener("pointermove", move);
+  chip.addEventListener("pointerup", end);
+  chip.addEventListener("pointercancel", end);
+}
+
+function startArrowDrag(ev, p) {
+  if (locked) return;
+  ev.preventDefault(); ev.stopPropagation();
+  fbd.setPointerCapture(ev.pointerId);
+  const move = e => {
+    if (overFbd(e)) {
+      const a = aimFrom(e);
+      if (a.dist >= 20) { p.angle = a.angle; p.len = a.len; }
+      p.off = false; statusEl.textContent = "";
+    } else {
+      p.off = true; statusEl.textContent = "Let go to remove this force.";
+    }
+    render();
+  };
+  const end = e => {
+    fbd.removeEventListener("pointermove", move);
+    fbd.removeEventListener("pointerup", end);
+    fbd.removeEventListener("pointercancel", end);
+    if (!overFbd(e)) placed = placed.filter(q => q !== p);
+    delete p.off; statusEl.textContent = "";
+    render(); sendValue(); sendHeight();
+  };
+  fbd.addEventListener("pointermove", move);
+  fbd.addEventListener("pointerup", end);
+  fbd.addEventListener("pointercancel", end);
+}
+
+// ---------- Palette and list of placed forces ----------
+function buildPalette() {
+  const pal = document.getElementById("palette");
+  pal.innerHTML = "";
+  forces.forEach(f => {
+    const chip = document.createElement("div");
+    chip.className = "chip"; chip.dataset.id = f.id;
+    chip.innerHTML = `<span class="sw" style="background:${f.color}"></span><span class="sym" style="color:${f.color}">${symHTML(f)}</span><span>${f.name}</span>`;
+    chip.addEventListener("pointerdown", ev => startPaletteDrag(ev, f, chip));
+    pal.appendChild(chip);
+  });
+}
+function updatePalette() {
+  document.querySelectorAll("#palette .chip").forEach(chip => {
+    chip.classList.toggle("used", placed.some(p => p.id === chip.dataset.id));
+    chip.classList.toggle("locked", locked);
+  });
+  document.getElementById("paletteTitle").textContent = locked
+    ? "Your diagram is correct. On to the equations."
+    : "Forces you can use (not all of them are real forces)";
+}
+function updatePlacedList() {
+  const box = document.getElementById("placed");
+  box.innerHTML = "";
+  if (!placed.length) {
+    const s = document.createElement("span"); s.style.opacity = .65;
+    s.textContent = "No forces on your diagram yet.";
+    box.appendChild(s); return;
+  }
+  const lab = document.createElement("span"); lab.style.opacity = .75; lab.textContent = "On your diagram:";
+  box.appendChild(lab);
+  placed.forEach(p => {
+    const f = forceById(p.id); if (!f) return;
+    const tag = document.createElement("span"); tag.className = "tag";
+    tag.innerHTML = `<span class="sym" style="color:${f.color}">${symHTML(f)}</span>`;
+    if (!locked) {
+      const b = document.createElement("button");
+      b.title = "Remove " + f.name; b.setAttribute("aria-label", "Remove " + f.name); b.textContent = "×";
+      b.onclick = () => { placed = placed.filter(q => q !== p); render(); sendValue(); sendHeight(); };
+      tag.appendChild(b);
+    }
+    box.appendChild(tag);
+  });
+  if (!locked) {
+    const c = document.createElement("button"); c.className = "clear"; c.textContent = "Clear diagram";
+    c.onclick = () => { placed = []; render(); sendValue(); sendHeight(); };
+    box.appendChild(c);
+  }
+}
+
+// ---------- Situation sketches ----------
+const ST = 'stroke="currentColor" stroke-width="2"';
+function hatch(x1, x2, y, up) {
+  let s = `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" ${ST}/>`;
+  for (let x = x1 + 8; x <= x2; x += 12) {
+    const y2 = up ? y - 8 : y + 8;
+    s += `<line x1="${x}" y1="${y}" x2="${x - 8}" y2="${y2}" stroke="currentColor" stroke-opacity=".5" stroke-width="1.2"/>`;
+  }
+  return s;
+}
+function arrow(x1, y1, x2, y2, color) {
+  const ang = Math.atan2(y2 - y1, x2 - x1), hl = 9, hw = 5;
+  const bx = x2 - Math.cos(ang) * hl, by = y2 - Math.sin(ang) * hl, px = -Math.sin(ang), py = Math.cos(ang);
+  return `<line x1="${x1}" y1="${y1}" x2="${bx}" y2="${by}" stroke="${color}" stroke-width="2.2"/>` +
+         `<polygon points="${x2},${y2} ${bx + px * hw},${by + py * hw} ${bx - px * hw},${by - py * hw}" fill="${color}"/>`;
+}
+function txt(x, y, s, o) {
+  o = o || {};
+  return `<text x="${x}" y="${y}" text-anchor="${o.anchor || "middle"}" font-size="${o.size || 13}" fill="${o.color || "currentColor"}"` +
+         `${o.italic ? ' font-style="italic" font-family="Times New Roman, serif"' : ""}>${s}</text>`;
+}
+function person(cx, headY) {
+  return `<circle cx="${cx}" cy="${headY}" r="11" fill="none" ${ST}/>` +
+    `<line x1="${cx}" y1="${headY + 11}" x2="${cx}" y2="${headY + 60}" ${ST}/>` +
+    `<line x1="${cx}" y1="${headY + 27}" x2="${cx - 18}" y2="${headY + 47}" ${ST}/>` +
+    `<line x1="${cx}" y1="${headY + 27}" x2="${cx + 18}" y2="${headY + 47}" ${ST}/>` +
+    `<line x1="${cx}" y1="${headY + 60}" x2="${cx - 14}" y2="${headY + 100}" ${ST}/>` +
+    `<line x1="${cx}" y1="${headY + 60}" x2="${cx + 14}" y2="${headY + 100}" ${ST}/>`;
+}
+
+const SCENES = {
+  table: () =>
+    `<rect x="50" y="158" width="220" height="12" rx="2" fill="#b07d4f" fill-opacity=".5" ${ST}/>` +
+    `<line x1="70" y1="170" x2="70" y2="222" ${ST}/><line x1="250" y1="170" x2="250" y2="222" ${ST}/>` +
+    hatch(30, 290, 222, false) +
+    `<rect x="122" y="128" width="76" height="30" rx="3" fill="#2f6fd6" fill-opacity=".35" ${ST}/>` +
+    txt(160, 148, "book"),
+
+  hanging: () =>
+    hatch(90, 230, 30, true) +
+    `<line x1="160" y1="30" x2="160" y2="108" ${ST}/>` +
+    `<path d="M128,140 L146,108 L174,108 L192,140 Z" fill="#e8c547" fill-opacity=".55" ${ST}/>` +
+    `<circle cx="160" cy="147" r="7" fill="#fff4b0" ${ST}/>` +
+    txt(178, 72, "cord", { anchor: "start" }),
+
+  skydiver: () =>
+    `<circle cx="160" cy="78" r="11" fill="none" ${ST}/>` +
+    `<line x1="160" y1="89" x2="160" y2="140" ${ST}/>` +
+    `<line x1="160" y1="100" x2="122" y2="80" ${ST}/><line x1="160" y1="100" x2="198" y2="80" ${ST}/>` +
+    `<line x1="160" y1="140" x2="132" y2="172" ${ST}/><line x1="160" y1="140" x2="188" y2="172" ${ST}/>` +
+    [110, 140, 180, 210].map(x => `<line x1="${x}" y1="225" x2="${x}" y2="195" stroke="currentColor" stroke-opacity=".35" stroke-width="1.5"/>`).join("") +
+    arrow(255, 70, 255, 160, "currentColor") + txt(268, 120, "v", { italic: true, size: 16 }),
+
+  elevator: () =>
+    `<rect x="100" y="40" width="120" height="180" rx="4" fill="currentColor" fill-opacity=".05" ${ST}/>` +
+    `<line x1="160" y1="0" x2="160" y2="40" ${ST}/>` +
+    person(160, 108) +
+    arrow(255, 190, 255, 80, "currentColor") + txt(268, 140, "a", { italic: true, size: 16 }) +
+    arrow(285, 190, 285, 110, "currentColor") + txt(298, 155, "v", { italic: true, size: 16 }),
+
+  push: () =>
+    hatch(30, 290, 190, false) +
+    `<rect x="135" y="132" width="64" height="58" rx="3" fill="#c8a26b" fill-opacity=".55" ${ST}/>` +
+    txt(167, 166, "box") +
+    arrow(62, 161, 131, 161, "#d6336c") + txt(95, 150, "push", { color: "#d6336c" }) +
+    arrow(140, 110, 200, 110, "currentColor") + txt(170, 100, "speeding up") +
+    txt(160, 220, "rough floor", { italic: true }),
+
+  sled: () =>
+    hatch(20, 300, 192, false) +
+    `<rect x="105" y="158" width="76" height="16" rx="3" fill="#c0392b" fill-opacity=".4" ${ST}/>` +
+    `<path d="M98,186 L186,186 Q198,186 196,174" fill="none" ${ST}/>` +
+    `<line x1="118" y1="174" x2="118" y2="186" ${ST}/><line x1="168" y1="174" x2="168" y2="186" ${ST}/>` +
+    `<line x1="181" y1="166" x2="262" y2="119.2" ${ST}/>` +
+    `<line x1="181" y1="166" x2="250" y2="166" stroke="currentColor" stroke-opacity=".5" stroke-dasharray="4 4"/>` +
+    `<path d="M216,166 A35,35 0 0 0 211.3,148.5" fill="none" ${ST}/>` +
+    txt(232, 160, "θ", { italic: true, size: 16 }) + txt(240, 112, "rope", { anchor: "end" }) +
+    arrow(110, 128, 170, 128, "currentColor") + txt(140, 118, "speeding up"),
+
+  incline: (variant) => {
+    let s = `<polygon points="40,200 280,200 40,61.4" fill="currentColor" fill-opacity=".08" ${ST}/>` +
+      `<g transform="translate(160,130.7) rotate(30)"><rect x="-24" y="-30" width="48" height="30" rx="3" fill="#c8a26b" fill-opacity=".6" ${ST}/></g>` +
+      `<path d="M240,200 A40,40 0 0 1 245.36,180" fill="none" ${ST}/>` +
+      txt(229, 195, "θ", { italic: true, size: 16 });
+    if (variant !== "frictionless") {
+      for (let i = 0; i < 14; i++) {
+        const x = 52 + i * 16.5, y = 61.4 + (x - 40) * 0.5774;
+        s += `<line x1="${x}" y1="${y}" x2="${x - 4}" y2="${y + 7}" stroke="currentColor" stroke-opacity=".45" stroke-width="1.2"/>`;
+      }
+    }
+    if (variant === "static") s += txt(205, 100, "at rest", { anchor: "start" });
+    else s += arrow(165.2, 81.7, 199.8, 101.7, "currentColor") + txt(205, 100, "speeding up", { anchor: "start" });
+    return s;
+  },
+};
+
+function drawScene() {
+  const fn = SCENES[scenario.scene];
+  sceneSvg.innerHTML = fn ? fn(scenario.variant) : "";
+  document.getElementById("caption").textContent = scenario.caption || "";
+}
+</script>
+</body>
+</html>
+"""
+
 # The drag-and-drop diagram is a small custom component (plain HTML + JavaScript).
-fbd_builder = components.declare_component(
-    "fbd_builder", path=str(Path(__file__).parent / "fbd_component")
-)
+# Its HTML is stored at the bottom of this file and written to a temporary folder
+# at startup, so the app deploys as a single file with no extra folders to upload.
+def _component_dir() -> str:
+    folder = Path(tempfile.gettempdir()) / "fbd_builder_component"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "index.html").write_text(COMPONENT_HTML, encoding="utf-8")
+    return str(folder)
 
 ANGLE_TOLERANCE = 20  # degrees a student's arrow may be off and still count as correct
 
@@ -392,6 +822,8 @@ def reset_scenario(sid: str):
 def go_to(idx: int):
     ss["scenario_idx"] = idx
 
+
+fbd_builder = components.declare_component("fbd_builder", path=_component_dir())
 
 # ---------------------------------------------------------------------------
 # Sidebar
