@@ -420,6 +420,26 @@ const SCENES = {
       arrow(225, 135, 225, 85, "currentColor") + txt(240, 115, "a", { italic: true, size: 16 });
   },
 
+  table_pulley: (variant) => {
+    const on = 'fill="#2f6fd6" fill-opacity=".4" stroke="currentColor" stroke-width="2.5"';
+    const off = 'fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="4 3"';
+    const sub = n => `<tspan font-style="italic" font-family="Times New Roman, serif" font-size="17">m</tspan><tspan dy="4" font-size="11">${n}</tspan>`;
+    return `<rect x="20" y="120" width="210" height="12" rx="2" fill="#b07d4f" fill-opacity=".45" ${ST}/>` +
+      `<line x1="40" y1="132" x2="40" y2="222" ${ST}/><line x1="210" y1="132" x2="210" y2="222" ${ST}/>` +
+      hatch(10, 230, 222, false) +
+      `<line x1="226" y1="122" x2="242" y2="113" ${ST}/>` +
+      `<circle cx="242" cy="113" r="12" fill="currentColor" fill-opacity=".06" ${ST}/>` +
+      `<circle cx="242" cy="113" r="2.5" fill="currentColor"/>` +
+      `<line x1="140" y1="101" x2="242" y2="101" ${ST}/><line x1="254" y1="113" x2="254" y2="170" ${ST}/>` +
+      `<rect x="80" y="82" width="60" height="38" rx="3" ${variant === "m1" ? on : off}/>` +
+      `<rect x="236" y="170" width="36" height="36" rx="3" ${variant === "m2" ? on : off}/>` +
+      `<text x="110" y="107" text-anchor="middle" fill="currentColor">${sub(1)}</text>` +
+      `<text x="254" y="193" text-anchor="middle" fill="currentColor">${sub(2)}</text>` +
+      arrow(85, 66, 135, 66, "currentColor") + txt(110, 58, "a", { italic: true, size: 16 }) +
+      arrow(292, 160, 292, 212, "currentColor") + txt(304, 190, "a", { italic: true, size: 16 }) +
+      txt(125, 150, "frictionless table", { italic: true });
+  },
+
   push: () =>
     hatch(30, 290, 190, false) +
     `<rect x="135" y="132" width="64" height="58" rx="3" fill="#c8a26b" fill-opacity=".55" ${ST}/>` +
@@ -783,6 +803,34 @@ SCENARIOS = [
          tex_x=r"\Sigma F_x = 0", tex_y=r"\Sigma F_y = T - W_2 = m_2 a",
          note="The rope pulls on both masses with the same tension T, and both masses have the same "
               "size of acceleration a, so these two equations can be solved together for a and T."),
+    dict(id="table_box", title="Pulley: box on a table", scene="table_pulley", variant="m1",
+         angled=False, frictionless=True,
+         description="A box of mass m₁ sits on a frictionless table. A light string runs from the box over "
+                     "a frictionless pulley at the table's edge to a hanging mass m₂. When released, the box "
+                     "accelerates to the right and the hanging mass accelerates downward. Draw the free-body "
+                     "diagram for **m₁** (the box on the table, shaded).",
+         caption="Shaded box m₁ accelerates to the right", axis_angle=0, axes=STANDARD_AXES,
+         answer={"tension": 0, "weight": 270, "normal": 90},
+         symbols={"weight": ("W", "1", "W_1")}, mass_sub="1",
+         terms_x=[("tension", "", 1)], terms_y=[("normal", "", 1), ("weight", "", -1)],
+         rhs_x="ma", rhs_y="0",
+         tex_x=r"\Sigma F_x = T = m_1 a", tex_y=r"\Sigma F_y = N - W_1 = 0",
+         note="Tension is the only horizontal force on the box, so the string's pull alone accelerates it. "
+              "Vertically, N and W₁ balance because the box stays on the table."),
+    dict(id="table_hanging", title="Pulley: mass hanging off a table", scene="table_pulley", variant="m2",
+         angled=False,
+         description="The same setup: a box m₁ on a frictionless table is connected by a light string over a "
+                     "frictionless pulley to a hanging mass m₂. The box accelerates to the right and the "
+                     "hanging mass accelerates downward. Now draw the free-body diagram for **m₂** "
+                     "(the hanging mass, shaded).",
+         caption="Shaded mass m₂ accelerates downward", axis_angle=0, axes=STANDARD_AXES,
+         answer={"tension": 90, "weight": 270},
+         symbols={"weight": ("W", "2", "W_2")}, mass_sub="2",
+         terms_x=[], terms_y=[("tension", "", 1), ("weight", "", -1)], rhs_x="0", rhs_y="-ma",
+         tex_x=r"\Sigma F_x = 0", tex_y=r"\Sigma F_y = T - W_2 = -m_2 a",
+         note="A light string over a frictionless pulley pulls with the same tension T on both masses, and "
+              "they share the same size of acceleration a. Together with T = m₁a for the box, this lets you "
+              "solve for a and T. Notice T is less than W₂, since m₂ accelerates downward."),
     dict(id="push", title="Pushing a box", scene="push", variant="", angled=False,
          description="A student pushes horizontally on a box. The box slides to the right across a rough "
                      "floor and speeds up.",
@@ -853,6 +901,8 @@ def extra_force_hint(fid: str, sc: dict) -> str:
     if fid in ("kfriction", "sfriction"):
         if sc["variant"] == "frictionless":
             return f"**{name}:** this ramp is frictionless."
+        if sc.get("frictionless"):
+            return f"**{name}:** the table is frictionless."
         return f"**{name}:** nothing is sliding, or trying to slide, along a surface here, so there's no friction."
     if fid == "air":
         return "**Air resistance:** we're ignoring air resistance in this situation."
