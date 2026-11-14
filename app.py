@@ -445,12 +445,16 @@ const SCENES = {
       txt(125, 150, rough ? "rough table" : "frictionless table", { italic: true });
   },
 
-  push: () =>
+  push: (variant) =>
     hatch(30, 290, 190, false) +
     `<rect x="135" y="132" width="64" height="58" rx="3" fill="#c8a26b" fill-opacity=".55" ${ST}/>` +
     txt(167, 166, "box") +
-    arrow(62, 161, 131, 161, "#d6336c") + txt(95, 150, "push", { color: "#d6336c" }) +
-    arrow(140, 110, 200, 110, "currentColor") + txt(170, 100, "speeding up") +
+    (variant === "coasting" ? "" : arrow(62, 161, 131, 161, "#d6336c") + txt(95, 150, "push", { color: "#d6336c" })) +
+    (variant === "slowing" || variant === "coasting"
+      ? arrow(140, 116, 200, 116, "currentColor") + txt(212, 121, "v", { italic: true, size: 16 }) +
+        arrow(200, 90, 140, 90, "currentColor") + txt(128, 95, "a", { italic: true, size: 16 }) +
+        txt(170, 74, "slowing down")
+      : arrow(140, 110, 200, 110, "currentColor") + txt(170, 100, "speeding up")) +
     txt(160, 220, "rough floor", { italic: true }),
 
   sled: () =>
@@ -859,6 +863,30 @@ SCENARIOS = [
          terms_x=[("applied", "", 1), ("kfriction", "", -1)],
          terms_y=[("normal", "", 1), ("weight", "", -1)], rhs_x="ma", rhs_y="0",
          tex_x=r"\Sigma F_x = F_A - f_k = ma", tex_y=r"\Sigma F_y = N - W = 0"),
+    dict(id="push_slowing", title="Pushing a box that slows down", scene="push", variant="slowing",
+         angled=False,
+         description="A student keeps pushing horizontally on a box that slides to the right across a rough "
+                     "floor, but the box is slowing down.",
+         caption="Sliding right on a rough floor, slowing down", axis_angle=0, axes=STANDARD_AXES,
+         answer={"applied": 0, "kfriction": 180, "weight": 270, "normal": 90},
+         terms_x=[("applied", "", 1), ("kfriction", "", -1)],
+         terms_y=[("normal", "", 1), ("weight", "", -1)], rhs_x="-ma", rhs_y="0",
+         tex_x=r"\Sigma F_x = F_A - f_k = -ma", tex_y=r"\Sigma F_y = N - W = 0",
+         note="The box moves right but slows down, so its acceleration points left (−x) and the right side "
+              "is −ma. That means friction is bigger than the push: f_k > F_A. The forces are the same as when "
+              "the box speeds up; only their sizes and the direction of the acceleration change."),
+    dict(id="coasting", title="Box sliding to a stop", scene="push", variant="coasting",
+         angled=False,
+         description="A box was given a shove and let go. Now nothing is pushing it, and it slides to the "
+                     "right across a rough floor, slowing down.",
+         caption="Sliding right with nothing pushing it, slowing down", axis_angle=0, axes=STANDARD_AXES,
+         answer={"kfriction": 180, "weight": 270, "normal": 90},
+         terms_x=[("kfriction", "", -1)],
+         terms_y=[("normal", "", 1), ("weight", "", -1)], rhs_x="-ma", rhs_y="0",
+         tex_x=r"\Sigma F_x = -f_k = -ma", tex_y=r"\Sigma F_y = N - W = 0",
+         note="Kinetic friction is the only horizontal force, so −f_k = −ma, which means f_k = ma. Nothing is "
+              "needed to keep the box moving to the right: it keeps going because of inertia, and friction "
+              "is what slows it down."),
     dict(id="sled", title="Pulling a sled", scene="sled", variant="", angled=True,
          description="A child pulls a sled across level snow with a rope held at angle θ above the "
                      "horizontal. The snow exerts friction on the sliding sled, and the sled speeds up.",
